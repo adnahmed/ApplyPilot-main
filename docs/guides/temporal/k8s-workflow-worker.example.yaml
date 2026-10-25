@@ -1,0 +1,42 @@
+# EXAMPLE: publish Dockerfile.control to your registry under this image name.
+# This is a workflow worker only, not a browser/learning Activity image.
+# Temporal service and TLS identity Secret must already exist.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: applypilot-workflows
+spec:
+  replicas: 2
+  selector:
+    matchLabels: {app: applypilot-workflows}
+  template:
+    metadata:
+      labels: {app: applypilot-workflows}
+    spec:
+      terminationGracePeriodSeconds: 90
+      containers:
+        - name: workflows
+          image: applypilot-temporal-control:local
+          imagePullPolicy: IfNotPresent
+          args: [worker, --roles, workflow]
+          env:
+            - {name: APPLYPILOT_TEMPORAL_ADDRESS, value: temporal-frontend.temporal.svc:7233}
+            - {name: APPLYPILOT_TEMPORAL_NAMESPACE, value: applypilot}
+            - {name: APPLYPILOT_TEMPORAL_WORKSPACE, value: default}
+            - {name: APPLYPILOT_TEMPORAL_TLS, value: "true"}
+            - {name: APPLYPILOT_TEMPORAL_TLS_CA, value: /var/run/temporal/ca.crt}
+            - {name: APPLYPILOT_TEMPORAL_TLS_CERT, value: /var/run/temporal/tls.crt}
+            - {name: APPLYPILOT_TEMPORAL_TLS_KEY, value: /var/run/temporal/tls.key}
+          volumeMounts:
+            - {name: temporal-identity, mountPath: /var/run/temporal, readOnly: true}
+          resources:
+            requests: {cpu: 250m, memory: 256Mi}
+            limits: {cpu: "1", memory: 1Gi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 10001
+            capabilities: {drop: [ALL]}
+      volumes:
+        - name: temporal-identity
+          secret: {secretName: applypilot-temporal-mtls}

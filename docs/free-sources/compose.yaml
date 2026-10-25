@@ -1,0 +1,14 @@
+# Local-only sample. Pin SEARXNG_IMAGE to a reviewed version/digest for deployment.
+services:
+  searxng:
+    image: ${SEARXNG_IMAGE:-searxng/searxng:latest}
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8888:8080"
+    environment:
+      SEARXNG_SECRET: ${SEARXNG_SECRET:?Set a random SEARXNG_SECRET in your shell}
+      SEARXNG_BASE_URL: http://127.0.0.1:8888/
+    volumes:
+      - ./searxng-settings.yaml:/etc/searxng/settings.yml:ro
+    security_opt:
+      - no-new-privileges:true

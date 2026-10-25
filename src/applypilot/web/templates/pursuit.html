@@ -1,0 +1,32 @@
+{% from 'macros.html' import record, empty %}
+{% if value.get('needs_initialization') %}
+  {{ empty('No pursuit history yet.', 'Confirmed applications and observed responses will build this view.') }}
+{% else %}
+  {% set practice = value.get('practice',{}) %}
+  {% for lane in practice.get('lanes',[]) %}
+    <wa-details summary="{{ lane.label }} · {{ lane.progress.completed_answers }} completed practice answers">
+      {% for signal in lane.progress.get('signals',[]) if signal.get('repeated_gap') or signal.get('observed_improvement') %}
+        <article class="opportunity-action"><h3>{{ signal.topic }} · {{ signal.dimension|label }}</h3>
+          <p>{{ signal.intervention }}</p><p class="muted">{{ signal.observations }} observations across {{ signal.sessions }} sessions. Provisional coaching signal.</p>
+          {% if signal.latest.get('answer_quote') %}<blockquote>{{ signal.latest.answer_quote }}</blockquote>{% endif %}
+          {% if signal.get('observed_improvement') %}<p>Improvement has been observed on this topic; keep checking it in later answers.</p>{% endif %}
+        </article>
+      {% else %}<p>Complete answers across sessions before drawing conclusions about recurring weaknesses or improvement.</p>{% endfor %}
+      <a href="/ui/career?{{ urlencode({'job_url':lane.representative_job}) }}">Practice this role lane</a>
+    </wa-details>
+  {% endfor %}
+  <h3 class="section-divider">Comparable strategy groups</h3><p>{{ value.get('note','') }}</p>
+  {% if value.get('missing_strategy_snapshots') %}<p class="muted">{{ value.missing_strategy_snapshots }} historical submissions have no strategy snapshot and are excluded from strategy comparisons.</p>{% endif %}
+  {% if value.get('cohorts') %}<div class="table-wrap"><table class="table"><thead><tr><th>Context</th><th>Recorded strategy</th><th>Observed engagement</th><th>95% interval</th><th>Human effort before applying</th><th>Evidence strength</th></tr></thead><tbody>
+    {% for row in value.cohorts %}<tr><td>{{ row.role_family }} · {{ row.market }}<small>{{ row.channel }} · fit {{ row.fit_band }} · {{ row.role_tier }}</small></td><td>{{ row.strategy|replace('|',', ')|replace('_',' ') }}</td><td>{{ row.engagement }} / {{ row.submissions }}</td><td>{{ (row.interval95[0]*100)|round(1) }}–{{ (row.interval95[1]*100)|round(1) }}%</td><td>{{ (row.recorded_effort_minutes|string) + ' minutes recorded' if row.recorded_effort_minutes is not none else 'Not recorded' }}<small>{{ row.effort_observations }} effort entries</small></td><td>{{ 'Enough observations for a descriptive comparison' if row.sufficient else 'Small sample — exploratory only' }}</td></tr>{% endfor %}
+  </tbody></table></div>{% else %}<p>No mature, observed strategy groups yet.</p>{% endif %}
+  <h3 class="section-divider">Opportunity → strategy → evidence → outcome</h3>
+  {% for item in value.get('sequences',[]) %}<wa-details summary="{{ item.title or 'Opportunity' }} · {{ item.company }}">
+    <p>{{ item.strategies|join(', ')|replace('_',' ') or 'Strategy was not captured at submission' }}</p>
+    <p class="muted">{% if item.cohort_included %}Included in mature strategy cohorts{% else %}Excluded from strategy cohorts: {{ (item.excluded_reason or ('strategy not captured' if not item.strategies else 'repeat opportunity'))|replace('_',' ') }}{% endif %}</p>
+    <p>Evidence IDs: {{ item.evidence_ids|join(', ') or 'Not recorded' }}</p>
+    <p>Observed outcomes: {{ item.outcomes|join(', ')|replace('_',' ') or 'None recorded' }}</p>
+    <a href="/ui/opportunities?{{ urlencode({'job_url':item.job_url}) }}">Open opportunity</a>
+    <ol>{% for step in item.actions %}<li><strong>{{ step.kind|label }}</strong> · <time datetime="{{ step.at }}" data-time>{{ step.at }}</time> · {{ step.timing|replace('_',' ') }}{% if step.get('recipient') %}<p>To {{ step.recipient }}</p>{% endif %}{% if step.get('evidence_ids') %}<p>Proof: {{ step.evidence_ids|join(', ') }}</p>{% endif %}{% if step.get('note') %}<p>{{ step.note }}</p>{% endif %}{% if step.get('human_effort_minutes') is not none %}<small>{{ step.human_effort_minutes }} minutes recorded</small>{% endif %}</li>{% endfor %}</ol>
+  </wa-details>{% else %}<p>Confirmed submissions will appear here with their observed sequence of actions.</p>{% endfor %}
+{% endif %}

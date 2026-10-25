@@ -1,0 +1,361 @@
+# ApplyPilot target strategy example.
+# Copy to ~/.applypilot/searches.yaml only after configuring discovery_runtime.yaml.
+# Explicit sources still require their own authorization; browser/model/paid work
+# remains disabled unless the runtime grants access and positive resource budgets.
+# Countries below are applicant work-location targets, not employer HQ claims.
+# Exploration shares are policy starting points, not measured hiring probabilities.
+# Global pay requires evidence of location-independent pay; USD alone is insufficient.
+
+schema_version: 2
+sources:
+  enabled:
+  - jobspy
+  - freehire
+  - hiring_cafe
+  - greenhouse
+  - lever
+  - ashby
+  - ats_registry
+  - workday
+  - amazon
+  - costco
+  - builtin
+  - hackernews
+  - remotive
+  - remoteok
+  - reed
+  - seek
+  - irishjobs
+  - ziprecruiter
+  - linkedin_posts
+  - twitter
+  - smartextract
+  - browseros_linkedin
+jobspy:
+  sites:
+  - linkedin
+  - indeed
+  - glassdoor
+  - google
+  - zip_recruiter
+  - naukri
+  - bayt
+  - bdjobs
+tiers:
+- 1
+- 2
+location_labels:
+- home-remote
+- global-remote
+- relocation-uae
+- relocation-saudi
+- local-islamabad
+locations:
+- label: home-remote
+  countries:
+  - PK
+  work_modes:
+  - remote
+  employment_types:
+  - full_time
+  - contract
+  requires_clearance: false
+- label: pakistan-onsite-preset
+  countries:
+  - PK
+  work_modes:
+  - onsite
+  - hybrid
+- label: global-remote
+  regions:
+  - global
+  work_modes:
+  - remote
+  employment_types:
+  - full_time
+  - contract
+  requires_clearance: false
+- label: relocation-uae
+  countries:
+  - AE
+  work_modes:
+  - onsite
+  - hybrid
+  employment_types:
+  - full_time
+  requires_relocation: true
+  requires_clearance: false
+- label: relocation-saudi
+  countries:
+  - SA
+  work_modes:
+  - onsite
+  - hybrid
+  employment_types:
+  - full_time
+  requires_relocation: true
+  requires_clearance: false
+- label: qatar-preset
+  countries:
+  - QA
+  work_modes:
+  - onsite
+  - hybrid
+- label: bahrain-preset
+  countries:
+  - BH
+  work_modes:
+  - onsite
+  - hybrid
+- label: uk-remote-preset
+  countries:
+  - GB
+  work_modes:
+  - remote
+- label: ireland-remote-preset
+  countries:
+  - IE
+  work_modes:
+  - remote
+- label: germany-remote-preset
+  countries:
+  - DE
+  work_modes:
+  - remote
+- label: netherlands-remote-preset
+  countries:
+  - NL
+  work_modes:
+  - remote
+- label: estonia-remote-preset
+  countries:
+  - EE
+  work_modes:
+  - remote
+- label: singapore-remote-preset
+  countries:
+  - SG
+  work_modes:
+  - remote
+- label: local-islamabad
+  countries:
+  - PK
+  cities:
+  - Islamabad
+  work_modes:
+  - onsite
+  - hybrid
+  employment_types:
+  - full_time
+  - contract
+  requires_clearance: false
+preferences:
+- id: foreign-contractor-or-eor
+  match:
+    markets:
+    - home-remote
+    employer_scope: foreign
+    engagements:
+    - contractor
+    - eor
+- id: global-pay-remote
+  match:
+    markets:
+    - home-remote
+    pay_basis: global
+- id: gulf-relocation
+  match:
+    markets:
+    - relocation-uae
+    - relocation-saudi
+- id: uk-eu-worldwide-remote
+  match:
+    markets:
+    - home-remote
+    employer_regions:
+    - uk
+    - eu
+    eligible_scope: worldwide
+- id: localized-foreign-remote
+  match:
+    markets:
+    - home-remote
+    employer_scope: foreign
+    pay_basis: localized
+- id: local-work-floor
+  match:
+    markets:
+    - local-islamabad
+exploration:
+  discovery_share: 0.15
+  application_share: 0.1
+probes:
+- Full Stack Engineer
+- Backend Engineer
+- Frontend Engineer
+- AI Engineer
+- Software Engineer
+- Platform Engineer
+role_filter:
+  include_any:
+  - software engineer
+  - software developer
+  - full stack
+  - fullstack
+  - full-stack
+  - backend
+  - frontend
+  - typescript
+  - react
+  - node.js
+  - ai engineer
+  - agentic ai
+  - generative ai
+  - llm engineer
+  - platform engineer
+  - infrastructure engineer
+  exclude_any:
+  - engineering manager
+  - director of engineering
+  - vice president
+  - sales engineer
+  - solutions consultant
+variants:
+- name: global-remote-high-comp
+  market: global-remote
+  salary_currency: USD
+  salary_period: year
+  salary_min: 84000
+
+queries:
+  - query: "Senior AI Engineer"
+    tier: 1
+    exclude: ["manager", "director", "vp", "vice president", "lead", "principal", "staff", "sales", "consultant", "architect"]
+  - query: "AI Agent Engineer"
+    tier: 1
+    exclude: ["manager", "director", "vp", "vice president", "lead", "principal", "staff", "sales", "consultant", "architect"]
+  - query: "Senior Agentic AI Engineer"
+    tier: 1
+    exclude: ["manager", "director", "vp", "vice president", "lead", "principal", "staff", "sales", "consultant", "architect"]
+  - query: "Senior Generative AI Engineer"
+    tier: 1
+    exclude: ["manager", "director", "vp", "vice president", "lead", "principal", "staff", "sales", "consultant", "architect"]
+  - query: "Applied AI Engineer"
+    tier: 1
+    exclude: ["manager", "director", "vp", "vice president", "lead", "principal", "staff", "sales", "consultant", "architect"]
+  - query: "Senior Backend Engineer"
+    tier: 1
+    exclude: ["manager", "director", "vp", "vice president", "lead", "principal", "staff", "sales", "consultant", "architect"]
+  - query: "Senior Backend Engineer Python"
+    tier: 1
+    exclude: ["manager", "director", "vp", "vice president", "lead", "principal", "staff", "sales", "consultant", "architect"]
+  - query: "Senior AI Software Engineer"
+    tier: 1
+    exclude: ["manager", "director", "vp", "vice president", "lead", "principal", "staff", "sales", "consultant", "architect"]
+  - query: "Senior Full Stack Engineer"
+    tier: 1
+    exclude: ["manager", "director", "vp", "vice president", "lead", "principal", "staff", "sales", "consultant", "architect"]
+  - query: "Senior Full Stack Engineer TypeScript"
+    tier: 1
+    exclude: ["manager", "director", "vp", "vice president", "lead", "principal", "staff", "sales", "consultant", "architect"]
+  - query: "Senior TypeScript Engineer"
+    tier: 1
+    exclude: ["manager", "director", "vp", "vice president", "lead", "principal", "staff", "sales", "consultant", "architect"]
+  - query: "Senior React Engineer"
+    tier: 1
+    exclude: ["manager", "director", "vp", "vice president", "lead", "principal", "staff", "sales", "consultant", "architect"]
+  - query: "Senior Node.js Engineer"
+    tier: 1
+    exclude: ["manager", "director", "vp", "vice president", "lead", "principal", "staff", "sales", "consultant", "architect"]
+  - query: "Senior Frontend Engineer"
+    tier: 1
+    exclude: ["manager", "director", "vp", "vice president", "lead", "principal", "staff", "sales", "consultant", "architect"]
+  - query: "Senior Frontend Engineer TypeScript"
+    tier: 1
+    exclude: ["manager", "director", "vp", "vice president", "lead", "principal", "staff", "sales", "consultant", "architect"]
+  - query: "Senior Backend Engineer TypeScript"
+    tier: 1
+    exclude: ["manager", "director", "vp", "vice president", "lead", "principal", "staff", "sales", "consultant", "architect"]
+  - query: "Senior Backend Engineer Node.js"
+    tier: 1
+    exclude: ["manager", "director", "vp", "vice president", "lead", "principal", "staff", "sales", "consultant", "architect"]
+  - query: "AI Platform Engineer"
+    tier: 2
+  - query: "Senior AI Platform Engineer"
+    tier: 2
+  - query: "AI Systems Engineer"
+    tier: 2
+  - query: "Senior LLM Engineer"
+    tier: 2
+  - query: "LLM Engineer"
+    tier: 2
+  - query: "Generative AI Engineer"
+    tier: 2
+  - query: "AI Backend Engineer"
+    tier: 2
+  - query: "Senior AI Application Engineer"
+    tier: 2
+  - query: "AI Application Engineer"
+    tier: 2
+  - query: "Senior Software Engineer AI"
+    tier: 2
+  - query: "Software Engineer AI"
+    tier: 2
+  - query: "AI Infrastructure Engineer"
+    tier: 2
+  - query: "Senior AI Infrastructure Engineer"
+    tier: 2
+  - query: "Senior DevOps AI Infrastructure Engineer"
+    tier: 2
+  - query: "Full Stack Engineer"
+    tier: 2
+  - query: "TypeScript Engineer"
+    tier: 2
+  - query: "React Engineer"
+    tier: 2
+  - query: "Node.js Engineer"
+    tier: 2
+  - query: "Frontend Engineer TypeScript"
+    tier: 2
+  - query: "Backend Engineer TypeScript"
+    tier: 2
+  - query: "Backend Engineer Node.js"
+    tier: 2
+  - query: "Platform Engineer TypeScript"
+    tier: 2
+  - query: "Senior Platform Engineer TypeScript"
+    tier: 2
+  - query: "Software Engineer TypeScript"
+    tier: 2
+  - query: "Software Engineer React"
+    tier: 2
+  - query: "Software Engineer Node.js"
+    tier: 2
+  - query: "Senior Platform Engineer"
+    tier: 3
+  - query: "Senior Software Engineer"
+    tier: 3
+  - query: "Senior Python Engineer"
+    tier: 3
+  - query: "Senior Python Developer"
+    tier: 3
+  - query: "Distributed Systems Engineer"
+    tier: 3
+  - query: "Senior Infrastructure Engineer"
+    tier: 3
+  - query: "Senior Cloud Engineer"
+    tier: 3
+  - query: "MLOps Engineer"
+    tier: 3
+  - query: "Senior MLOps Engineer"
+    tier: 3
+  - query: "Lead AI Engineer"
+    tier: 3
+  - query: "Lead Backend Engineer"
+    tier: 3
+  - query: "Staff AI Engineer"
+    tier: 3
+  - query: "Staff Software Engineer"
+    tier: 3
+  - query: "Staff Backend Engineer"
+    tier: 3

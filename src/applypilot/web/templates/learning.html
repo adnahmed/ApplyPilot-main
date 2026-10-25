@@ -1,0 +1,61 @@
+{% from 'macros.html' import status_variant %}
+{% from 'macros.html' import metric %}
+{% from 'components.html' import read_more %}
+{% set settings = value.get('settings',{}) %}
+{% set episodes = value.get('episodes',{}) %}
+{% set overview = value.get('learning_overview',{}) %}
+{% set scheduler = value.get('scheduler',{}) %}
+<div class="metrics">
+  {{ metric('Tasks with saved policies',overview.get('installed_task_count',0)) }}
+  {{ metric('Recent rounds',value.get('rounds',[])|length) }}
+  {{ metric('Ready cohorts',scheduler.get('ready_cohorts')) }}
+  {{ metric('RLM','Enabled' if value.get('inference',{}).get('rlm_enabled') else 'Disabled') }}
+</div>
+<div class="section-heading"><div><h3>{{ scheduler.get('state','not_observed')|label }}</h3>{% if scheduler.get('checked_at') %}<small>Last recorded {{ scheduler.checked_at|run_time }}</small>{% endif %}</div><a href="/ui/settings?section=rlm">RLM settings & activity</a></div>
+{% if scheduler.get('reason_code') %}<p class="error text-value">{{ scheduler.reason_code|label }}</p>{% endif %}
+{% if scheduler.get('blocked_counts') %}<div class="results-summary">{% for reason,count in scheduler.blocked_counts.items() %}<span>{{ count }} {{ reason|label }}</span>{% endfor %}</div>{% endif %}
+<h3>Recent learning rounds</h3>
+<div class="table-wrap"><table class="table"><thead><tr><th>Started</th><th>Task</th><th>Result</th><th>Evaluation</th><th>Details</th></tr></thead><tbody>
+{% for round in value.get('rounds',[]) %}{% set report = round.get('report',{}) %}
+<tr>
+  <td>{{ round.started|run_time }}{% if round.get('finished') %}<small>{{ ((round.finished-round.started)/60)|round(1) }} minutes</small>{% endif %}</td>
+  <th scope="row">{{ round.task|label }}</th>
+  <td><wa-badge variant="{{ status_variant(round.state) }}">{{ round.state|label }}</wa-badge>{% if not round.get('finished') %}<small>Last recorded phase; completion not recorded</small>{% endif %}{% if report.get('reason_code') %}<p>{{ report.reason_code|label }}</p>{% endif %}</td>
+  <td>{% if report.get('baseline_holdout_score') is not none and report.get('candidate_holdout_score') is not none %}
+    {{ report.baseline_holdout_score|round(3) }} → {{ report.candidate_holdout_score|round(3) }}
+    <small>Change {{ '%+.3f'|format(report.candidate_holdout_score-report.baseline_holdout_score) }} · {{ report.get('evaluation_kind','evaluation')|label }}</small>
+    {% else %}Not evaluated{% endif %}</td>
+  <td><wa-details summary="Round details">
+    <p class="text-value">{{ round.id }}</p>
+    {% if report.get('gateway_and_native_root_reservations') is not none %}
+    <p>{{ report.gateway_and_native_root_reservations }} gateway reservations{% if report.get('reserved_output_tokens') is not none %} · {{ report.reserved_output_tokens }} output tokens reserved{% endif %}</p>
+    <p>ApplicationAttempts are budget bounds, not usage.</p>
+    {% else %}<p>ApplicationAttempt totals have not been recorded.</p>{% endif %}
+    {% if report.get('quality_dimensions') %}<table class="table"><thead><tr><th>Quality measure</th><th>Before</th><th>After</th></tr></thead><tbody>
+      {% for name, dimension in report.quality_dimensions.items() %}<tr><th>{{ name|label }}</th><td>{{ dimension.baseline|round(3) if dimension.get('baseline') is not none else 'Not assessed' }}</td><td>{{ dimension.candidate|round(3) if dimension.get('candidate') is not none else 'Not assessed' }}</td></tr>{% endfor %}
+    </tbody></table>{% endif %}
+    {% if report.get('budget_plan') %}<pre>{{ report.budget_plan|pretty }}</pre>{% endif %}
+    {% if report.get('error_type') %}<p>{{ report.error_type }}</p>{% endif %}
+    <a href="/api/rlm/traces/{{ round.id }}" hx-boost="false" target="_blank" rel="noopener">RLM execution details</a>
+  </wa-details></td>
+</tr>
+{% else %}<tr><td colspan="5">No learning rounds recorded yet.</td></tr>{% endfor %}
+</tbody></table></div>
+<div class="section-heading section-divider"><h3>Installed instructions</h3><wa-button href="/api/learning/export-policy" hx-boost="false" variant="neutral" appearance="outlined">Export policies</wa-button></div>
+{% for policy in overview.get('installed',[]) %}
+<article class="policy-change">
+  <div class="section-heading"><div><p class="eyebrow">{{ policy.group }}</p><h3>{{ policy.label }}</h3></div><wa-badge variant="neutral">{{ policy.source }}</wa-badge></div>
+  {{ read_more(policy.instructions, 'Read full instructions') }}
+  {% if policy.get('revision') %}<p class="muted">Revision {{ policy.revision }}{% if policy.get('created') %} · <time data-time datetime="{{ policy.created }}">{{ policy.created }}</time>{% endif %}</p>{% endif %}
+</article>
+{% else %}<p class="quiet-empty">No learned policy is installed yet. Built-in instructions remain available while examples accumulate.</p>{% endfor %}
+<div class="section-heading section-divider"><h3>Examples by task</h3></div>
+{% for group in overview.get('groups',[]) %}
+<section class="learning-group" aria-labelledby="learning-{{ loop.index }}">
+  <h3 id="learning-{{ loop.index }}">{{ group.label }}</h3>
+  <div class="table-wrap"><table class="table"><thead><tr><th scope="col">Task</th><th scope="col">Instructions</th><th scope="col">Available examples</th></tr></thead><tbody>
+    {% for task in group.tasks %}<tr><th scope="row">{{ task.label }}{% if not task.enabled %}<small class="muted"> · Learning disabled for this task</small>{% endif %}</th><td><wa-badge variant="neutral">{{ task.instruction_source }}{% if task.installed_count > 1 %} · {{ task.installed_count }} policies{% endif %}</wa-badge></td><td data-number>{{ task.examples }}</td></tr>{% endfor %}
+  </tbody></table></div>
+</section>
+{% endfor %}
+{% if value.get('error') %}<wa-callout variant="danger">{{ value.error }}</wa-callout>{% endif %}

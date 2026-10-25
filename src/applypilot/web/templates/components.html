@@ -1,0 +1,16 @@
+{% macro detail_link(url, text, class_name='') -%}
+{% if 'btn' in class_name.split() %}<wa-button href="{{ url }}" hx-get="{{ url }}" hx-target="#detail-content" hx-select="unset" hx-swap="innerHTML" data-open-dialog variant="neutral" appearance="outlined" size="{{ 's' if 'btn-sm' in class_name.split() else 'm' }}">{{ text }}</wa-button>
+{% else %}<a class="{{ class_name }}" href="{{ url }}" hx-get="{{ url }}" hx-target="#detail-content" hx-select="unset" hx-swap="innerHTML" data-open-dialog>{{ text }}</a>{% endif %}
+{%- endmacro %}
+
+{% macro read_more(text, label='Read more') -%}
+<ap-read-more label="{{ label }}"><div class="prose">{{ text }}</div></ap-read-more>
+{%- endmacro %}
+
+{% macro section_header(title, description='') -%}
+<header class="section-heading"><div><h2>{{ title }}</h2>{% if description %}<p class="section-note">{{ description }}</p>{% endif %}</div>{% if caller is defined %}<div class="toolbar">{{ caller() }}</div>{% endif %}</header>
+{%- endmacro %}
+
+{% macro tabs(items, active, label) -%}
+<nav class="section-tabs nav nav-tabs" aria-label="{{ label }}">{% for key, text, url in items %}<a class="nav-link{% if active == key %} active{% endif %}" href="{{ url }}"{% if active == key %} aria-current="page"{% endif %}>{{ text }}</a>{% endfor %}</nav>
+{%- endmacro %}

@@ -1,0 +1,18 @@
+FROM python:3.12-slim
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PYTHONPATH=/app/src APPLYPILOT_DIR=/workspace
+WORKDIR /app
+COPY docs/guides/temporal/requirements-control.txt /tmp/requirements-control.txt
+RUN pip install --no-cache-dir -r /tmp/requirements-control.txt \
+    && useradd --create-home --uid 10001 applypilot \
+    && mkdir /workspace && chown applypilot:applypilot /workspace
+# This image contains only the control boundary and its configuration dependencies.
+COPY src/applypilot/__init__.py /app/src/applypilot/__init__.py
+COPY src/applypilot/config.py src/applypilot/runtime_policy.py /app/src/applypilot/
+COPY src/applypilot/config/runtime_policy.yaml /app/src/applypilot/config/runtime_policy.yaml
+# Deterministic Workflow contracts only; no model/browser/renderer dependencies.
+COPY src/applypilot/documents/__init__.py src/applypilot/documents/contracts.py /app/src/applypilot/documents/
+COPY src/applypilot/signals/__init__.py src/applypilot/signals/contracts.py /app/src/applypilot/signals/
+COPY src/applypilot/orchestration /app/src/applypilot/orchestration
+USER 10001
+ENTRYPOINT ["python", "-m", "applypilot.orchestration"]
+CMD ["worker", "--roles", "workflow"]

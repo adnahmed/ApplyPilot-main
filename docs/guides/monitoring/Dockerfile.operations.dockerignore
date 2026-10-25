@@ -1,0 +1,18 @@
+# This Dockerfile-specific allowlist overrides the source-tools root .dockerignore.
+# Send only the stdlib exporter package and its image smoke test to the builder.
+**
+!src/
+!src/applypilot/
+!src/applypilot/__init__.py
+!src/applypilot/sqlite_reads.py
+!src/applypilot/operations/
+!src/applypilot/operations/**
+!docs/
+!docs/guides/
+!docs/guides/monitoring/
+!docs/guides/monitoring/Dockerfile.operations
+!docs/guides/monitoring/Dockerfile.operations.dockerignore
+!docs/guides/monitoring/check_operations_image.py
+**/__pycache__
+**/*.pyc
+**/*.pyo

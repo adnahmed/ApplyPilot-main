@@ -1,0 +1,37 @@
+# Public discovery pages. Credentials/commercial APIs are not assumed.
+sources:
+  - {name: Dealroom public market maps, url: 'https://dealroom.co/api/marketmaps?q=ai&limit=200', kind: company_registry}
+  - {name: Dealroom public funding signals, url: 'https://dealroom.co/api/live-signals?limit=100', kind: funding_news}
+  - {name: SEC Form D filings, url: 'https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=D&owner=include&count=100&output=atom', kind: funding_database}
+  - {name: TechCrunch startup feed, url: 'https://techcrunch.com/category/startups/feed/', kind: funding_news}
+  - {name: PR Newswire venture capital, url: 'https://www.prnewswire.com/rss/venture-capital-list.rss', kind: funding_news}
+  - {name: Guardian technology feed, url: 'https://www.theguardian.com/technology/rss', kind: funding_news}
+  - {name: Jobseek company catalog, url: 'https://raw.githubusercontent.com/colophon-group/jobseek/main/apps/crawler/data/companies.csv', kind: company_registry}
+  - {name: Startup Portfolios, url: 'https://cdn.jsdelivr.net/gh/yigitmeteozcan/startups@main/data/by-year/{year}.json', kind: accelerator}
+  - {name: Y Combinator, url: 'https://www.ycombinator.com/companies', kind: accelerator}
+  - {name: Techstars, url: 'https://www.techstars.com/portfolio', kind: accelerator}
+  - {name: Antler, url: 'https://www.antler.co/portfolio', kind: accelerator}
+  - {name: Seedcamp, url: 'https://seedcamp.com/our-companies/', kind: portfolio_directory}
+  - {name: Entrepreneur First, url: 'https://www.joinef.com/portfolio/', kind: accelerator}
+  - {name: a16z, url: 'https://jobs.a16z.com/companies', kind: vc_job_board}
+  - {name: Sequoia, url: 'https://jobs.sequoiacap.com/companies', kind: vc_job_board}
+  - {name: Lightspeed, url: 'https://jobs.lsvp.com/companies', kind: vc_job_board}
+  - {name: Greylock, url: 'https://greylock.com/portfolio/', kind: portfolio_directory}
+  - {name: Wamda, url: 'https://www.wamda.com/', kind: funding_news, market: MENA}
+  - {name: MAGNiTT news, url: 'https://magnitt.com/news', kind: funding_news, market: MENA}
+  - {name: Hub71, url: 'https://jobs.hub71.com/companies', kind: vc_job_board, market: UAE}
+  - {name: BECO Capital, url: 'https://careers.becocapital.com/companies', kind: vc_job_board, market: UAE}
+  - {name: Shorooq, url: 'https://www.shorooq.com/portfolio', kind: portfolio_directory, market: MENA}
+  - {name: DIFC Innovation Hub, url: 'https://www.difc.com/ecosystem/innovation-hub', kind: government_program, market: UAE}
+  - {name: RAED Ventures, url: 'https://raed.vc/portfolio/', kind: portfolio_directory, market: Saudi Arabia}
+  - {name: STV, url: 'https://stv.vc/', kind: portfolio_directory, market: MENA}
+  - {name: Sanabil, url: 'https://www.sanabil.com/en/Our-Portfolio/', kind: portfolio_directory, market: Saudi Arabia}
+  - {name: 500 Global, url: 'https://500.co/companies', kind: accelerator, market: MENA}
+  - {name: NTDP, url: 'https://ntdp.mcit.gov.sa/', kind: government_program, market: Saudi Arabia}
+  - {name: 'P@SHA Directory', url: 'https://directory.pasha.org.pk/', kind: company_registry, market: Pakistan}
+  - {name: 'P@SHA Startup Hub', url: 'https://startups.pasha.org.pk/', kind: company_registry, market: Pakistan}
+  - {name: Ignite NIC, url: 'https://ignite.org.pk/national-incubation-centers/', kind: government_program, market: Pakistan}
+  - {name: Pakistan Startup Fund, url: 'https://ignite.org.pk/pakistan-startup-fund/', kind: government_program, market: Pakistan}
+  - {name: NICAT, url: 'https://nicat.pk/directory', kind: accelerator, market: Pakistan}
+  - {name: Product Hunt, url: 'https://www.producthunt.com/', kind: product_launch}
+  - {name: GitHub Trending, url: 'https://github.com/trending', kind: community}

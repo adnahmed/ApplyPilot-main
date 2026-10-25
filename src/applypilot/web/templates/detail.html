@@ -1,0 +1,44 @@
+{% from 'macros.html' import status_variant %}
+{% from 'macros.html' import record, action, diagnostics %}
+{% if kind == 'job' %}
+  {% set job = value.get('job', value) %}
+  <h2>{{ job.get('title') or 'Opportunity' }}</h2>
+  <p>{{ job.get('company') or 'Company not recorded' }}{% if job.get('location') %} · {{ job.location }}{% endif %}</p>
+  <div class="toolbar"><wa-badge variant="{{ status_variant(job.get('state','discovered')) }}">{{ (job.get('state') or 'discovered')|label }}</wa-badge>
+    <span>Fit: {{ job.fit_score if job.get('fit_score') is not none else 'Not scored yet' }}</span>
+    {% set original = namespace(url='') %}{% for candidate in [job.get('original_listing_url'),job.get('application_url'),job.get('listing_url'),job.get('url')] %}{% if not original.url and candidate is string and (candidate.startswith('https://') or candidate.startswith('http://')) %}{% set original.url = candidate %}{% endif %}{% endfor %}
+    {% if original.url %}<a href="{{ original.url }}" target="_blank" rel="noopener noreferrer">Open original listing</a>{% endif %}
+  </div>
+  {% if job.get('apply_error') %}<wa-callout variant="danger" role="status"><h3>Why this application stopped</h3><p class="text-value">{{ job.apply_error }}</p></wa-callout>{% endif %}
+  {% if job.get('full_description') or job.get('description') %}<h3>About this role</h3><div class="message-body">{{ job.get('full_description') or job.description }}</div>{% endif %}
+  <div class="toolbar">{% for document in job.get('documents',[]) %}
+    <wa-button href="/api/document?{{ urlencode({'url':job.url,'kind':document.kind}) }}" hx-boost="false" variant="neutral" appearance="outlined">Download {{ {'resume':'résumé','cover':'cover letter','brief':'interview brief'}.get(document.kind,document.kind|label) }}</wa-button>
+  {% endfor %}</div>
+  <h3>Career workbench</h3>
+  <p><a href="/ui/opportunities?{{ urlencode({'job_url':job.url}) }}">Application requirements, sent package and next action</a></p>
+  <p>Use this opportunity and your saved profile for evaluation, interview practice, debriefs and offer discussions.</p>
+  <div class="toolbar"><a href="/ui/career?{{ urlencode({'job_url':job.url}) }}">Reports for this opportunity</a>
+    <a href="/ui/career?{{ urlencode({'job_url':job.url,'mode':'interview_plan'}) }}">Prepare for this interview</a></div>
+  {% if value.get('timeline') %}<h3>Application activity</h3>{{ record(value.timeline) }}{% endif %}
+  {{ diagnostics(value, 'Full opportunity details') }}
+{% elif kind == 'outreach' %}
+  {% set message = value.get('outbox', value) %}
+  <h2>{{ message.get('title') or message.get('name') or 'Outreach message' }}</h2>
+  <p>{{ message.get('company') or '' }} · {{ message.get('state','')|label }}</p>
+  <h3>{{ message.get('payload',{}).get('subject','') }}</h3><div class="message-body">{{ message.get('payload',{}).get('body','') }}</div>
+  {% if message.get('cancellable') and not read_only %}{{ action('outreach/' + identifier + '/cancel','Cancel message',{},'outreach') }}{% endif %}
+  {{ diagnostics(value) }}
+{% elif kind == 'diary' %}
+  {% set item = value.get('item',value) %}
+  {% if value.get('kind') == 'note' %}<h2>Your achievement note</h2><div class="message-body">{{ item.get('note','') }}</div>
+  {% else %}<h2>{{ item.get('problem') or 'Recorded achievement' }}</h2>
+  {% set intervention = item.get('intervention') or {} %}
+  <h3>What you did</h3><p class="message-body">{{ intervention.get('summary') or intervention.get('description') or 'No contribution description recorded.' }}</p>
+  {% if intervention.get('skills') %}<div class="tag-list">{% for skill in intervention.skills %}<wa-badge variant="neutral">{{ skill }}</wa-badge>{% endfor %}</div>{% endif %}
+  {% if item.get('measurements') %}<h3 class="section-divider">Measured results</h3>{% for measurement in item.measurements %}<article class="impact-entry"><strong>{{ measurement.get('claim') or measurement.get('name') or measurement.get('quantity_text') }}</strong>{% if measurement.get('quantity_text') %}<p>{{ measurement.quantity_text }}</p>{% endif %}{% if measurement.get('source_ref') %}<small>Source: {{ measurement.source_ref }}</small>{% endif %}</article>{% endfor %}{% endif %}
+  {% if item.get('outcomes') %}<h3 class="section-divider">Outcomes</h3>{% for outcome in item.outcomes %}<article class="impact-entry"><p>{{ outcome.get('claim') or outcome.get('description') }}</p><small>{{ outcome.get('claimability','recorded')|label }}{% if outcome.get('source_ref') %} · Source: {{ outcome.source_ref }}{% endif %}</small></article>{% endfor %}{% endif %}
+  {% endif %}
+  {{ diagnostics(item,'Original record and source references') }}
+{% else %}
+  <h2>{{ value.get('title') or value.get('name') or kind|label }}</h2>{{ record(value) }}
+{% endif %}

@@ -1,0 +1,107 @@
+[
+  {
+    "source": "share/chatgpt/mycareer.py",
+    "vendored": "runtime.py",
+    "sha256": "767550c8b1a1020174529c5fa891ceb146806e21e5d85afbd2fde6bbf53b15b8"
+  },
+  {
+    "source": "share/chatgpt/INTERVIEW.md",
+    "vendored": "upstream/share/chatgpt/INTERVIEW.md",
+    "sha256": "8de271b018c27658ebf74aa7a0f23b638756c085f6bed3a8a60748c687ad3396"
+  },
+  {
+    "source": "share/chatgpt/RENDER.md",
+    "vendored": "upstream/share/chatgpt/RENDER.md",
+    "sha256": "e7a703505696b3754cfb452c62bc7f567aa8f33c4ee88066b76fa78fcec20831"
+  },
+  {
+    "source": "share/chatgpt/PROJECT_INSTRUCTIONS.md",
+    "vendored": "upstream/share/chatgpt/PROJECT_INSTRUCTIONS.md",
+    "sha256": "5f9c7c210c1f7b5fec31297f23c65ff6cd472dc15bd2d55d4337d142af7cd78d"
+  },
+  {
+    "source": "scripts/mycareer.js",
+    "vendored": "upstream/scripts/mycareer.js",
+    "sha256": "4124f5e490f15705da3b51f272142cfb45efb3db561a6aab7bf9ead5bcaea7d1"
+  },
+  {
+    "source": "scripts/match.js",
+    "vendored": "upstream/scripts/match.js",
+    "sha256": "c51a814aef994e2b2788f075a6952560d1f1cd59322f322881f3cebdffad3420"
+  },
+  {
+    "source": "scripts/recruiter_view.js",
+    "vendored": "upstream/scripts/recruiter_view.js",
+    "sha256": "8dec1211660c41b60f36a9a3e40049440b4fe4f1eb6a1e6240fc3a05b3515355"
+  },
+  {
+    "source": "scripts/validate_corpus.js",
+    "vendored": "upstream/scripts/validate_corpus.js",
+    "sha256": "67f00c5681294039559a8ab46e5a832f25c32fd3e830fd133a19d3954a9ab2ac"
+  },
+  {
+    "source": "scripts/screen.js",
+    "vendored": "upstream/scripts/screen.js",
+    "sha256": "3b381690a73bb87172e271620f1bac4cb9613359808bb55c31c30e99179cc527"
+  },
+  {
+    "source": "scripts/app_to_corpus.js",
+    "vendored": "upstream/scripts/app_to_corpus.js",
+    "sha256": "a3998f2cb9b8100c56aa7727f4cfd9bc2e80154f0c21e34f8c34437ed83d9951"
+  },
+  {
+    "source": "scripts/letter_lib.js",
+    "vendored": "upstream/scripts/letter_lib.js",
+    "sha256": "8eb571e5346ff8372030651e033d4dc599336208d0304535fd683a3173d65fc6"
+  },
+  {
+    "source": "scripts/build_letters.js",
+    "vendored": "upstream/scripts/build_letters.js",
+    "sha256": "9a33378f51e592063b34f57a97916fe191e298cdbe9099956b40a0540f12c6ce"
+  },
+  {
+    "source": "data/adjacency.json",
+    "vendored": "upstream/data/adjacency.json",
+    "sha256": "4677185070a4a0e198914f4b146b7ff9b5cd1ac957daa3787fd74c777097e175"
+  },
+  {
+    "source": "schema/mycareer.schema.json",
+    "vendored": "upstream/schema/mycareer.schema.json",
+    "sha256": "5a1c35aed49babb47951bf5b3b273d14580cf2b675ce25a0292952c598fdef08"
+  },
+  {
+    "source": "schema/mycareer.example.json",
+    "vendored": "upstream/schema/mycareer.example.json",
+    "sha256": "6a8ddbd03da1e175cbb06217f71f150682b34eaebfad7e2c04c1865dfcf41005"
+  },
+  {
+    "source": "skills/mycareer-interview/SKILL.md",
+    "vendored": "upstream/skills/mycareer-interview/SKILL.md",
+    "sha256": "13579f700d15694a3cddbdf76ef8b4b9f961f67a98dc5bd00bffe366bff8b34f"
+  },
+  {
+    "source": "skills/mycareer-interview/interrogation-prompt.md",
+    "vendored": "upstream/skills/mycareer-interview/interrogation-prompt.md",
+    "sha256": "b8f74e3a8dc5bbdc3d2e07d37f86fd5c2f2e5e9682ede35975d0fc652d241c27"
+  },
+  {
+    "source": "skills/mycareer-documents/SKILL.md",
+    "vendored": "upstream/skills/mycareer-documents/SKILL.md",
+    "sha256": "e1fefc3abfdea1203f83048346edd5acd2c2632cf991b06f0f5b525a7a2b5ce9"
+  },
+  {
+    "source": "docs/mycareer.md",
+    "vendored": "upstream/docs/mycareer.md",
+    "sha256": "907c6feb8fca4c86c28dafa2d42ede4e4c1d94860bb97d5a60e1750a05565914"
+  },
+  {
+    "source": "docs/recruiter.md",
+    "vendored": "upstream/docs/recruiter.md",
+    "sha256": "a5fdfd40c984f4fe0531cebddba0c26812fe83d9a9753969e8f72d470c20491e"
+  },
+  {
+    "source": "package.json",
+    "vendored": "upstream/package.json",
+    "sha256": "5ddcbb7016af300cf0d0de40a42188bc9b25f696d87e26d03cd657736ac4ce17"
+  }
+]

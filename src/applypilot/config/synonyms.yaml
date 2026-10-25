@@ -1,0 +1,50 @@
+# Alias tables for discovery (pipeline.py, discovery/intent.py, matching).
+# Kept as data so aliases are editable without code changes.
+#
+# Scope of each table:
+#   source_aliases: CLI/adapter convenience aliases -> canonical adapter name.
+#   board_aliases:  JobSpy board aliases -> canonical board name.  A board is a
+#                   site restriction on the single `jobspy` adapter, never an
+#                   independent crawl.
+#   role_aliases:   conservative role-phrase variants for shared role
+#                   admission.  These must stay specific: they are matched as
+#                   annotated exact/word-boundary variants, NOT raw substring
+#                   `in` checks, so a variant such as `react` never matches
+#                   unrelated words like "reaction" or "react-native".
+
+# Adapter aliases (canonical name is in pipeline.DISCOVERY_SOURCES keys /
+# discovery.intent.KNOWN_SOURCES).
+source_aliases:
+  hiring.cafe: hiring_cafe
+  hiringcafe: hiring_cafe
+  web: web_search
+  ddgs: web_search
+  searxng: web_search
+  hn: hackernews
+  smart: smartextract
+  dice: smartextract
+  linkedin_browser: browseros_linkedin
+
+# Board aliases.  Keys resolve through intent._resolve_board_alias.
+# `ziprecruiter` (without underscore) is deliberately NOT here: it is a
+# standalone adapter, distinct from the `zip_recruiter` JobSpy board.
+board_aliases:
+  zip_recruiter: zip_recruiter
+
+# Role-phrase variants (canonical phrase -> accepted variant phrases).
+# Conservative; consumed by role admission (matching.RoleAdmission).
+role_aliases:
+  software engineer:
+    - software development engineer
+    - sde
+    - swe
+  backend engineer:
+    - back end engineer
+    - backend developer
+  full stack engineer:
+    - fullstack engineer
+    - full-stack engineer
+  ai engineer:
+    - ai/ml engineer
+  platform engineer:
+    - platform software engineer

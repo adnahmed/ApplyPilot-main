@@ -1,0 +1,16 @@
+use_default_settings:
+  engines:
+    keep_only:
+      - duckduckgo
+      - bing
+      - duckduckgo news
+search:
+  safe_search: 1
+  formats:
+    - html
+    - json
+server:
+  bind_address: "0.0.0.0"
+  port: 8080
+  limiter: false  # loopback binding only; do not publish this as an open proxy
+  image_proxy: false

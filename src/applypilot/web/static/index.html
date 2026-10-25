@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>ApplyPilot · Your job-search workspace</title>
+  <script src="/static/theme.js"></script>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="/static/dm-sans-latin-variable.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/static/manrope-latin-variable.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/static/fonts.css">
+  <link rel="stylesheet" href="/static/styles.css">
+  <link rel="stylesheet" href="/static/setup.css">
+  <link rel="stylesheet" href="/static/workspace.css">
+  <link rel="stylesheet" href="/static/comfort.css">
+  <link rel="stylesheet" href="/static/control-room.css">
+  <link rel="stylesheet" href="/static/engine.css">
+  <link rel="stylesheet" href="/static/experience.css">
+  <script type="module" src="/static/app.js"></script>
+  <link rel="stylesheet" href="/static/workbench.css">
+  <link rel="stylesheet" href="/static/workers.css">
+  <link rel="stylesheet" href="/static/work.css">
+</head>
+
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div id="auth-screen" class="auth-screen" hidden>
+    <div class="auth-card">
+      <div class="brand-mark" aria-hidden="true">a<span>↗</span></div>
+      <div class="eyebrow">YOUR PRIVATE WORKSPACE</div>
+      <h1>Open your<br>ApplyPilot workspace.</h1>
+      <p>Open the private dashboard link printed by ApplyPilot to unlock this computer’s job-search workspace.</p>
+      <form id="unlock-form">
+        <label for="unlock-token">Local dashboard access token</label>
+        <input id="unlock-token" type="password" autocomplete="current-password"
+          aria-describedby="unlock-help auth-error" required placeholder="Paste the token from your private link">
+        <button class="btn btn-primary" type="submit">Unlock workspace <span aria-hidden="true">→</span></button>
+      </form>
+      <p id="unlock-help" class="fine-print">Local-first. Optional GitHub backups use your private repository. No
+        dashboard account or third-party analytics.</p>
+      <p id="auth-error" class="error-text" role="alert"></p>
+    </div>
+  </div>
+  <div id="page-status" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
+  <div id="app-shell">
+    <aside class="sidebar" id="sidebar" aria-label="Workspace navigation">
+      <button id="nav-close" class="icon-btn mobile-nav-close" type="button" aria-label="Close navigation"><span
+          data-icon="close"></span></button>
+      <a href="#overview" class="brand" aria-label="ApplyPilot overview">
+        <div class="brand-mark" aria-hidden="true">a<span>↗</span></div><span>ApplyPilot<span
+            class="brand-sub">Job-search workspace</span></span>
+      </a>
+      <div class="workspace-tag"><span class="workspace-avatar">P</span><span>Your workspace<small>Local-first ·
+            Private</small></span><span class="tiny-lock" data-icon="lock"></span></div>
+      <p class="nav-caption">YOUR JOB SEARCH</p>
+      <nav id="main-nav" aria-label="Main navigation">
+        <a href="#overview" data-view="overview"><span data-icon="grid"></span><span>Work & outcomes</span></a>
+        <a href="#workers" data-view="workers"><span data-icon="activity"></span><span>Workers</span></a>
+        <a href="#jobs" data-view="jobs"><span data-icon="briefcase"></span><span>Jobs</span><span id="nav-jobs"
+            class="nav-count" aria-hidden="true">—</span></a>
+        <a href="#outreach" data-view="outreach"><span data-icon="send"></span><span>Outreach</span><span
+            id="nav-pending" class="nav-count" aria-hidden="true" hidden></span></a>
+        <a href="#outcomes" data-view="outcomes"><span data-icon="check"></span><span>Results</span></a>
+        <a href="#diary" data-view="diary"><span data-icon="file"></span><span>Impact diary</span></a>
+        <details class="nav-group" id="manage-nav">
+          <summary aria-label="My workspace"><span data-icon="settings"></span><span>My workspace</span></summary>
+          <a href="#profile" data-view="profile"><span data-icon="file"></span><span>My profile</span></a>
+          <a href="#searches" data-view="searches"><span data-icon="search"></span><span>Search preferences</span></a>
+          <a href="#evidence" data-view="evidence"><span data-icon="layers"></span><span>My material</span></a>
+          <a href="#connections" data-view="connections"><span data-icon="settings"></span><span>Connections</span></a>
+          <a href="#backups" data-view="backups"><span data-icon="database"></span><span>Backups & recovery</span></a>
+          <a href="#setup" data-view="setup"><span data-icon="spark"></span><span>Setup guide</span></a>
+        </details>
+        <details class="nav-group" id="advanced-nav">
+          <summary aria-label="Tools & diagnostics"><span data-icon="layers"></span><span>Tools & diagnostics</span>
+          </summary>
+          <a href="#activity" data-view="activity"><span data-icon="activity"></span><span>Activity history</span></a>
+          <a href="#sources" data-view="sources"><span data-icon="layers"></span><span>Sources</span></a>
+          <a href="#operations" data-view="operations"><span data-icon="alert"></span><span>Operations</span></a>
+          <a href="#providers" data-view="providers"><span data-icon="activity"></span><span>AI providers</span></a>
+          <a href="#system" data-view="system"><span data-icon="database"></span><span>Database & diagnostics</span></a>
+        </details>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="autopilot-card"><span class="status-dot" id="sidebar-dot"></span><strong
+            id="sidebar-state">Connecting</strong>
+          <p id="sidebar-note">Checking autopilot status.</p>
+        </div>
+        <a href="#settings" class="settings-link" data-view="settings"><span
+            data-icon="settings"></span><span>Settings</span></a>
+        <div class="sidebar-footer"><span>Local workspace</span><button id="theme-toggle" class="icon-btn"
+            title="Toggle light / dark theme" aria-label="Toggle light or dark theme"><span
+              data-icon="moon"></span></button></div>
+      </div>
+    </aside>
+    <div class="main-shell">
+      <header class="topbar">
+        <div class="breadcrumb"><button id="nav-toggle" class="icon-btn" aria-controls="sidebar"
+            aria-label="Toggle navigation" aria-expanded="false"><span
+              data-icon="menu"></span></button><span>Workspace</span><span class="divider">/</span><strong
+            id="breadcrumb-page">Overview</strong></div>
+        <form id="global-search-form" class="global-search" role="search"><span data-icon="search"></span><input
+            id="global-search" aria-label="Search jobs and companies" placeholder="Search jobs, companies…"
+            autocomplete="off"><kbd id="search-shortcut">Ctrl K</kbd></form>
+        <button id="search-toggle" class="icon-btn mobile-search-toggle" type="button" aria-label="Open job search"
+          aria-expanded="false" aria-controls="global-search-form"><span data-icon="search"></span></button>
+        <button id="activity-toggle" class="btn btn-sm" type="button" aria-expanded="false" hidden>Activity &
+          results</button>
+        <span class="top-private"><span data-icon="lock"></span> Local & private</span>
+      </header>
+      <main id="main" tabindex="-1">
+        <div id="read-only-note" class="workspace-mode" hidden>Read-only workspace <span>You can explore and export.
+            Changes and automation controls are disabled.</span></div>
+        <p id="stream-status" class="stream-status" role="status" aria-live="polite">Connecting live stream…</p>
+        <div id="updates-notice" class="notice" role="status" hidden>Display updates are paused. Autopilot has not been
+          paused. <button id="resume-updates" class="text-button" type="button">Resume updates</button></div>
+        <div id="connection-alert" class="notice notice-warning" role="status" hidden></div>
+        <div class="page-heading">
+          <div>
+            <div class="eyebrow" id="page-eyebrow">YOUR SEARCH, AT A GLANCE</div>
+            <h1 id="page-title" tabindex="-1">Overview</h1>
+            <p id="page-subtitle">Current work, queue blockers, and saved outcomes.</p>
+          </div>
+          <div class="heading-actions"><button id="refresh-button" class="btn btn-quiet"><span
+                data-icon="refresh"></span>Refresh</button><button class="live-label" id="live-label" type="button"
+              aria-pressed="false" aria-label="Pause automatic display updates"
+              title="Pause display updates without pausing Autopilot"><span
+                class="status-dot"></span>Connecting</button></div>
+        </div>
+        <details class="autopilot-disclosure" id="autopilot-disclosure">
+          <summary><span class="autopilot-summary"><span data-icon="activity"></span><strong>Autopilot</strong><span
+                id="autopilot-summary-state" class="badge">Checking</span></span><span
+              class="autopilot-summary-action">Controls & status</span></summary>
+          <section class="autopilot-control" aria-labelledby="autopilot-control-title">
+            <div class="autopilot-control-copy">
+              <div class="eyebrow">AUTOPILOT</div>
+              <h2 id="autopilot-control-title">Checking Autopilot</h2>
+              <p id="autopilot-control-note" role="status" aria-live="polite">Checking your workspace…</p>
+              <p id="autopilot-work" class="fine-print"></p>
+              <p id="autopilot-lifetime" class="fine-print"></p>
+            </div>
+            <div class="autopilot-control-actions"><span id="autopilot-control-state"
+                class="badge">Checking</span><button id="autopilot-toggle" class="btn btn-primary autopilot-toggle"
+                type="button" disabled aria-describedby="autopilot-control-note"><span aria-hidden="true">▶</span> Start
+                autopilot</button><button id="autopilot-stop" class="btn btn-sm" type="button" hidden disabled
+                aria-describedby="autopilot-control-note">Stop controller</button><a href="#setup?step=launch"
+                id="autopilot-setup-link" class="fine-print">Review setup</a></div>
+          </section>
+        </details>
+        <div id="backup-alert" class="notice notice-warning" role="status" hidden></div>
+        <div id="operations-alert" class="notice notice-warning" role="status" hidden></div>
+        <div id="outreach-alert" class="notice notice-warning" role="status" hidden></div>
+        <section id="page" aria-label="Dashboard view">
+          <div class="loading-state">
+            <div class="loader"></div>
+            <p>Opening your workspace…</p>
+          </div>
+        </section>
+        <footer class="page-footer"><span>ApplyPilot <span class="footer-dot">·</span> Your local workspace</span><span
+            id="last-updated">Waiting for data</span></footer>
+      </main>
+    </div>
+  </div>
+  <dialog id="detail-dialog" class="detail-dialog" aria-labelledby="detail-title">
+    <div class="dialog-top"><span class="eyebrow" id="detail-kicker">DETAILS</span><button id="close-detail"
+        class="icon-btn" aria-label="Close details"><span data-icon="close"></span></button></div>
+    <div id="detail-content"></div>
+  </dialog>
+  <div id="toast" class="toast" hidden><span id="toast-message" role="status" aria-live="polite"
+      aria-atomic="true"></span><button id="dismiss-toast" class="icon-btn" type="button"
+      aria-label="Dismiss notification"><span data-icon="close"></span></button></div>
+  <noscript>
+    <div class="notice">Enable JavaScript to use the live dashboard. The existing static export remains available
+      through <code>applypilot dashboard --snapshot</code>.</div>
+  </noscript>
+</body>
+
+</html>

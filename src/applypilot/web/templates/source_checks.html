@@ -1,0 +1,13 @@
+{% from 'macros.html' import status_variant %}
+{% macro source_checks(checks) -%}
+<ul class="operation-checks source-checks">
+{% for check in checks %}
+  <li class="source-check">
+    <div class="section-heading"><strong>{{ check.get('label') or check.get('component','Source')|label }}</strong><wa-badge variant="{{ status_variant('unchecked' if check.get('skipped') else 'connected' if check.get('ok') else 'needs_attention') }}">{{ 'Not configured' if check.get('skipped') else 'Passed' if check.get('ok') else 'Failed' }}</wa-badge></div>
+    <p>{{ check.get('detail') or check.get('message') }}</p>
+    {% if check.get('next_action') %}<p class="next-action">{{ check.next_action }}</p>{% endif %}
+    {% if check.get('action_href') and (not check.get('ok') or check.get('skipped')) %}<wa-button href="{{ check.action_href }}" variant="neutral" appearance="outlined" size="s">{{ check.action_label }}</wa-button>{% endif %}
+  </li>
+{% endfor %}
+</ul>
+{%- endmacro %}

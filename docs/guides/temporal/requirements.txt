@@ -1,0 +1,2 @@
+# Add-on to the existing Python 3.12 environment. This does not rewrite uv.lock.
+temporalio==1.33.0

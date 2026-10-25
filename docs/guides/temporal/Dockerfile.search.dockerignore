@@ -1,0 +1,11 @@
+**
+!src/
+!src/applypilot/
+!docs/
+!docs/guides/
+!docs/guides/temporal/
+!docs/guides/temporal/requirements-control.txt
+!src/applypilot/**
+!docs/guides/temporal/requirements-search.txt
+**/__pycache__
+**/*.pyc

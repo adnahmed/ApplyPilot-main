@@ -1,0 +1,60 @@
+{% from 'macros.html' import status_variant %}
+{% from 'macros.html' import metric, empty %}
+{% macro size(number) -%}{{ number|filesizeformat(true) if number is number else 'Not measured' }}{%- endmacro %}
+{% macro backup_button(operation,label) -%}
+<form class="inline-form" method="post" action="/ui/actions/backups/{{ operation }}" hx-post="/ui/actions/backups/{{ operation }}" hx-target="this" hx-select="unset" hx-swap="outerHTML" hx-sync="this:drop" hx-disabled-elt="find wa-button">
+<input type="hidden" name="_view" value="backups"><input type="hidden" name="_form" value="backup-{{ operation }}"><wa-button type="submit" variant="neutral" appearance="outlined" size="s">{{ label }}</wa-button><span data-errors role="alert"></span></form>
+{%- endmacro %}
+{% set state = value.get('state') or {} %}
+{% set config = value.get('config') or {} %}
+{% set storage = value.get('storage') or {} %}
+{% set retention = value.get('retention') or {} %}
+{% set snapshot = state.get('snapshot') or {} %}
+{% set health = value.get('repository_health') or {} %}
+{% set history = value.get('history') or [] %}
+{% set points = value.get('snapshots') or state.get('points') or [] %}
+
+<div class="section-heading">
+  <div><h3>{{ config.get('repository') or 'Connect a private backup repository' }}</h3><p class="muted">{{ 'Automatic backups enabled' if config.get('enabled') else 'Automatic backups paused' }}</p></div>
+  {% if not read_only and config.get('enabled') and not value.get('active') %}<div class="connection-actions">{{ backup_button('sync','Back up now') }}{{ backup_button('check','Check repository') }}</div>{% endif %}
+</div>
+<div class="metrics">
+  {{ metric('Latest operation',state.get('status','Not started')|label) }}
+  {{ metric('Latest full snapshot',size(storage.get('snapshot_bytes')),((storage.get('snapshot_files')|string) + ' files') if storage.get('snapshot_files') is not none else '') }}
+  {{ metric('Added to storage',size(storage.get('last_added_packed_bytes') if storage.get('last_added_packed_bytes') is not none else storage.get('last_added_bytes')),'New encrypted data in the latest full backup') }}
+  {{ metric('Local backup files',size(storage.get('local_bytes')),'Includes cache, staging and retained recovery copies') }}
+  {{ metric('Remote backup storage',size(storage.get('remote_total_bytes')),'Updated when you refresh recovery points') }}
+</div>
+{% if not storage.get('complete',true) %}<p class="muted">The local size is a lower bound; the directory exceeded the display scan limit.</p>{% endif %}
+{% if state.get('error') %}<wa-callout variant="danger" role="alert">{{ state.error }}</wa-callout>{% endif %}
+{% if state.get('warning') %}<wa-callout variant="warning">{{ state.warning }}</wa-callout>{% endif %}
+{% if health.get('message') %}<wa-callout variant="{{ 'danger' if health.get('status') in ['failed','error','unavailable'] else 'neutral' }}">{{ health.message }}</wa-callout>{% endif %}
+{% if value.get('active') %}
+  <p role="status">{{ state.get('progress') or 'Backup in progress. The recovery point appears after verification finishes.' }}</p>
+  {% set transfer = state.get('transfer') or {} %}{% if transfer.get('received_bytes') is number %}<p>{{ size(transfer.received_bytes) }} transferred{% if transfer.get('expected_bytes') is number %} of {{ size(transfer.expected_bytes) }}{% endif %}</p>{% endif %}
+{% elif value.get('snapshot_overdue') %}<wa-callout variant="warning">The next full snapshot is overdue. {{ (value.get('readiness') or {}).get('problems',[])|join('. ') }}</wa-callout>{% endif %}
+{% if snapshot.get('created_at') %}<p>Latest verified snapshot: <time data-time datetime="{{ snapshot.created_at }}">{{ snapshot.created_at }}</time>.</p>{% endif %}
+<p class="section-note">{{ value.get('schedule_note','') }}</p>
+
+<div class="section-heading section-divider"><h3>Storage and retention</h3></div>
+<p>The latest <strong>{{ retention.get('keep_snapshots',config.get('keep_snapshots',30)) }} full snapshots</strong> are kept. Older full snapshots and unused encrypted data are pruned automatically after a successful full backup.</p>
+<p class="muted">Git checkpoint history and local rollback copies are retained. Snapshot sizes describe recoverable files; incremental storage additions describe newly saved data. Remote storage counts encrypted Release assets for this workspace and excludes Git history.</p>
+{% if storage.get('remote_storage_error') %}<wa-callout variant="danger">Storage measurement failed: {{ storage.remote_storage_error }}</wa-callout>{% endif %}
+{% if storage.get('remote_storage') %}<p class="muted">Measured <time data-time datetime="{{ storage.remote_storage.get('measured_at','') }}">{{ storage.remote_storage.get('measured_at','') }}</time>{% if not storage.remote_storage.get('complete') %} · at least {{ size(storage.remote_storage.get('bytes')) }}; the scan reached its display limit{% endif %}.</p>{% endif %}
+{% set maintenance = retention.get('last_maintenance') or {} %}
+{% if maintenance %}<p>Last cleanup: <strong>{{ maintenance.get('status','recorded')|label }}</strong> · <time data-time datetime="{{ maintenance.get('at','') }}">{{ maintenance.get('at','') }}</time>{% if maintenance.get('removed_snapshots') is not none %} · {{ maintenance.removed_snapshots }} snapshots removed{% endif %}.</p>{% if maintenance.get('error') or maintenance.get('reason') %}<wa-callout variant="warning">{{ maintenance.get('error') or maintenance.get('reason') }}</wa-callout>{% endif %}{% else %}<p class="muted">No cleanup report has been saved yet.</p>{% endif %}
+
+<div class="section-heading section-divider"><h3>Recovery points</h3>{% if not read_only and config.get('repository') and not value.get('active') %}{{ backup_button('points','Refresh recovery points') }}{% endif %}</div>
+{% if points %}
+<div class="table-wrap"><table class="table"><thead><tr><th>Created</th><th>Files</th><th>Snapshot size</th><th>New data</th><th>Recovery point</th></tr></thead><tbody>
+{% for item in points %}<tr><td><time data-time datetime="{{ item.get('created_at') or item.get('time','') }}">{{ item.get('created_at') or item.get('time','') }}</time></td><td>{{ item.get('files') if item.get('files') is not none else 'Not measured' }}</td><td>{{ size(item.get('bytes')) }}</td><td>{{ size(item.get('data_added_packed') if item.get('data_added_packed') is not none else item.get('data_added')) }}</td><td><code>{{ item.get('short_id') or item.get('id','')[:12] }}</code></td></tr>{% endfor %}
+</tbody></table></div>
+{% elif snapshot %}<p>Your latest snapshot is saved. Refresh recovery points to fetch the retained list from your private repository.</p>
+{% else %}<p class="quiet-empty">The first completed backup will create a verified recovery point.</p>{% endif %}
+
+<div class="section-heading section-divider"><h3>Backup history</h3><span class="muted">Latest 100 operations</span></div>
+{% if history %}
+<div class="table-wrap"><table class="table"><thead><tr><th>When</th><th>Result</th><th>Snapshot size</th><th>New data</th><th>Details</th></tr></thead><tbody>
+{% for item in history %}<tr><td><time data-time datetime="{{ item.get('at','') }}">{{ item.get('at','') }}</time></td><td><wa-badge variant="{{ status_variant(item.get('status','recorded')) }}">{{ item.get('status','recorded')|label }}</wa-badge></td><td>{{ size(item.get('bytes')) if item.get('id') else 'Settings checkpoint' if item.get('status') == 'synced' else '—' }}</td><td>{{ size(item.get('data_added_packed') if item.get('data_added_packed') is not none else item.get('data_added')) if item.get('id') else '—' }}</td><td>{% if item.get('error') %}<p class="row-description">{{ item.error }}</p>{% elif item.get('id') %}<code>{{ item.id[:12] }}</code>{% elif item.get('head') %}<code>{{ item.head[:12] }}</code>{% endif %}</td></tr>{% endfor %}
+</tbody></table></div>
+{% else %}<p class="quiet-empty">New backup results and their sizes will be recorded here.</p>{% endif %}

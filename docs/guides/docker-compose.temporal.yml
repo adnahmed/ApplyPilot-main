@@ -1,0 +1,142 @@
+# Standalone, local integration deployment. Not a production HA/TLS cluster.
+# Based on temporalio/samples-server/compose/docker-compose-postgres.yml.
+name: applypilot-temporal
+services:
+  temporal-postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: temporal
+      POSTGRES_PASSWORD: ${TEMPORAL_POSTGRES_PASSWORD:?Set TEMPORAL_POSTGRES_PASSWORD}
+      POSTGRES_DB: temporal
+    volumes:
+      - temporal-postgres-data:/var/lib/postgresql/data
+      - ./temporal/init-databases.sql:/docker-entrypoint-initdb.d/10-visibility.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U temporal -d temporal"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  temporal-schema:
+    image: temporalio/admin-tools:1.32.0
+    depends_on:
+      temporal-postgres:
+        condition: service_healthy
+    environment:
+      SQL_HOST: temporal-postgres
+      SQL_PORT: "5432"
+      SQL_USER: temporal
+      SQL_PASSWORD: ${TEMPORAL_POSTGRES_PASSWORD:?Set TEMPORAL_POSTGRES_PASSWORD}
+    volumes:
+      - ./temporal/setup-schema.sh:/scripts/setup-schema.sh:ro
+    entrypoint: ["/bin/sh", "/scripts/setup-schema.sh"]
+    restart: "no"
+
+  temporal:
+    image: temporalio/server:1.32.0
+    restart: unless-stopped
+    depends_on:
+      temporal-schema:
+        condition: service_completed_successfully
+    environment:
+      DB: postgres12
+      DB_PORT: "5432"
+      POSTGRES_USER: temporal
+      POSTGRES_PWD: ${TEMPORAL_POSTGRES_PASSWORD:?Set TEMPORAL_POSTGRES_PASSWORD}
+      POSTGRES_SEEDS: temporal-postgres
+      BIND_ON_IP: 0.0.0.0
+      DYNAMIC_CONFIG_FILE_PATH: config/dynamicconfig/applypilot.yaml
+    ports:
+      - "127.0.0.1:7233:7233"
+    volumes:
+      - ./temporal/dynamicconfig.yaml:/etc/temporal/config/dynamicconfig/applypilot.yaml:ro
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 7233"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  temporal-namespace:
+    image: applypilot-temporal-control:local
+    build:
+      context: ../..
+      dockerfile: docs/guides/temporal/Dockerfile.control
+    environment:
+      APPLYPILOT_TEMPORAL_ADDRESS: temporal:7233
+      APPLYPILOT_TEMPORAL_NAMESPACE: ${APPLYPILOT_TEMPORAL_NAMESPACE:-applypilot}
+      APPLYPILOT_TEMPORAL_WORKSPACE: ${APPLYPILOT_TEMPORAL_WORKSPACE:-default}
+    volumes:
+      - type: bind
+        source: ${APPLYPILOT_TEMPORAL_POLICY_FILE:-./temporal/runtime-policy.yaml}
+        target: /workspace/runtime_policy.yaml
+        read_only: true
+        bind: {create_host_path: false}
+    command: ["namespace"]
+    depends_on:
+      temporal:
+        condition: service_healthy
+    restart: on-failure
+
+  temporal-ui:
+    image: temporalio/ui:2.54.1
+    restart: unless-stopped
+    depends_on:
+      temporal:
+        condition: service_healthy
+    environment:
+      TEMPORAL_ADDRESS: temporal:7233
+      TEMPORAL_CORS_ORIGINS: http://127.0.0.1:8233
+    ports:
+      - "127.0.0.1:8233:8080"
+
+  temporal-workflows:
+    image: applypilot-temporal-control:local
+    build:
+      context: ../..
+      dockerfile: docs/guides/temporal/Dockerfile.control
+    restart: unless-stopped
+    environment:
+      APPLYPILOT_TEMPORAL_ADDRESS: temporal:7233
+      APPLYPILOT_TEMPORAL_NAMESPACE: ${APPLYPILOT_TEMPORAL_NAMESPACE:-applypilot}
+      APPLYPILOT_TEMPORAL_WORKSPACE: ${APPLYPILOT_TEMPORAL_WORKSPACE:-default}
+    volumes:
+      - type: bind
+        source: ${APPLYPILOT_TEMPORAL_POLICY_FILE:-./temporal/runtime-policy.yaml}
+        target: /workspace/runtime_policy.yaml
+        read_only: true
+        bind: {create_host_path: false}
+    command: ["worker", "--roles", "workflow"]
+    depends_on:
+      temporal-namespace:
+        condition: service_completed_successfully
+    stop_grace_period: 90s
+
+  temporal-activities:
+    profiles: [workers]
+    image: applypilot-temporal-worker:local
+    build:
+      context: ../..
+      dockerfile: docs/guides/temporal/Dockerfile.worker
+    restart: unless-stopped
+    environment:
+      APPLYPILOT_TEMPORAL_ADDRESS: temporal:7233
+      APPLYPILOT_TEMPORAL_NAMESPACE: ${APPLYPILOT_TEMPORAL_NAMESPACE:-applypilot}
+      APPLYPILOT_TEMPORAL_WORKSPACE: ${APPLYPILOT_TEMPORAL_WORKSPACE:-default}
+      APPLYPILOT_DATABASE_URL: ${APPLYPILOT_DATABASE_URL:-}
+      LLM_URL: ${LLM_URL:-http://host.docker.internal:4000/v1}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+    extra_hosts: ["host.docker.internal:host-gateway"]
+    volumes:
+      - type: bind
+        source: ${APPLYPILOT_WORKSPACE_DIR:-${APPLYPILOT_DIR:-${USERPROFILE:-${HOME}}/.applypilot}}
+        target: /workspace
+        bind: {create_host_path: false}
+    command: [worker, --roles, "${APPLYPILOT_WORKER_ROLES:-preparation,discovery,research,models,documents,learning,network,email,social,reporting,maintenance,egress}"]
+    depends_on:
+      temporal-namespace:
+        condition: service_completed_successfully
+    stop_grace_period: 360s
+
+volumes:
+  temporal-postgres-data:

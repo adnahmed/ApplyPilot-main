@@ -1,0 +1,148 @@
+# User data (NEVER commit)
+profile.json
+resume.txt
+resume.pdf
+*.env
+.env.*
+!.env.example
+notes/
+
+# Runtime artifacts
+*.db
+tailored_resumes/
+cover_letters/
+chrome-workers/
+apply-workers/
+apply_logs/
+logs/
+tmp_*
+# Playwright browser profiles (contain cookies/session state; never commit)
+*nvidia-build-playwright-profile/
+*playwright*profile*
+
+# MCP configs (per-machine)
+.mcp*.json
+
+# Playwright MCP
+.playwright-mcp/
+
+# direnv (per-machine venv activation)
+.envrc
+.direnv/
+
+# Node
+node_modules/
+
+# Python venv
+.venv/
+venv/
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+*.egg
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude Code
+.claude/
+# CLAUDE.md is machine/user-specific — copy CLAUDE.md.example to customize
+CLAUDE.md
+.opencode
+
+# LiteLLM Agent Fabric runtime secrets (only *.example is committed)
+litellm_metrics_token
+
+# Optional free-source tools and private local artifacts
+.free-source-tools/
+free_sources_mcp.json
+free-source-output/
+**/installed-requirements.txt
+
+# Private dashboard state if APPLYPILOT_DIR points inside a checkout
+web-dashboard.token
+web-dashboard.json
+web-runtime.json
+/github_sync/
+
+# Gateway refresh orchestration (can include prior locally customized config)
+.gateway-history/
+.gateway-stage-*/
+.refresh-gateway.lock
+docs/providers/custom_provider_inventory.json
+/gateway/
+/.tools/
+# Local deployment snapshots retained after extracting the gateway meta child.
+/docs/providers/
+/docs/guides/plugins/
+/docs/guides/patches/
+/docs/guides/warp_egress/
+/docs/guides/vpngate_egress/
+/docs/guides/tests/
+/docs/guides/runtime/
+/docs/guides/vpngate/
+/docs/guides/vpngate_egress_state/
+/docs/guides/workers/vpngate/
+/docs/guides/Dockerfile.*
+/docs/guides/gateway_*.py
+/docs/guides/generate_from_inventories.py
+/docs/guides/catalog_status.py
+/docs/guides/refresh_suspect_providers.py
+/docs/guides/probe_*.py
+/docs/guides/litellm.yaml
+/docs/guides/litellm-image-source.json
+/docs/guides/provider_quotas.generated.json
+/docs/guides/selection-report.json
+/docs/guides/headroom-optional.yaml
+/docs/guides/docker-compose.vpngate.yml
+/docs/guides/docker-compose.warp-egress.yml
+/docs/guides/pyproject.toml
+/docs/guides/requirements.txt
+/docs/guides/uv.lock
+/docs/guides/LICENSE
+/docs/guides/.gitignore
+/docs/guides/.env.example
+/docs/guides/scripts/*
+!/docs/guides/scripts/repair_docs_services.py
+/docs/guides/monitoring/README.md
+/docs/guides/monitoring/alerting-optional.yaml
+/docs/guides/monitoring/alerts.yml
+/docs/guides/monitoring/health-routing-optional.yaml
+/docs/guides/monitoring/init_metrics_token.sh
+/docs/guides/monitoring/litellm_metrics_token.example
+/docs/guides/monitoring/prometheus.compose.yml
+/docs/guides/monitoring/grafana/provisioning/
+/docs/guides/monitoring/grafana/dashboards/litellm-provider-fabric.json
+
+# Optional DSPy/GEPA datasets and candidates can contain applicant evidence
+ai-datasets/
+ai-candidates/
+ai-programs/
+
+# Private trace-driven learning corpus and local test cache
+learning/
+.pytest_cache/
+
+# Manual instruction-policy exports can contain private learned facts.
+policies.json
+applypilot-policies*.json
+*-policy.json
+
+# PostgreSQL namespaces/cluster, dumps and private gateway connection material
+*.pgstore/
+*.pgdump
+/postgres/
+docs/guides/secrets/*
+!docs/guides/secrets/README.md
+!docs/guides/secrets/*.example

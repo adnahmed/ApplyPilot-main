@@ -1,0 +1,132 @@
+{% from 'macros.html' import action, empty, metric, status_variant %}
+{% macro quoted_evidence(items) -%}
+<ul class="records">{% for item in items %}<li>{% if item.url %}<a href="{{ item.url }}" target="_blank" rel="noopener noreferrer">{{ item.title or 'Source document' }}</a>{% else %}<strong>{{ item.title or 'Saved candidate material' }}</strong>{% endif %}<blockquote>{{ item.quote }}</blockquote></li>{% endfor %}</ul>
+{%- endmacro %}
+{% if value.get('needs_initialization') %}
+<wa-callout variant="neutral">Company discovery becomes available when the updated pipeline initializes the workspace.</wa-callout>
+{% endif %}
+<p class="section-note">Discover employers from funding, accelerator and portfolio evidence. Watched companies use your existing search and automation preferences.</p>
+{% set predictive = value.get('predictive') or {} %}
+<h3>Predictive company research</h3>
+<p class="section-note">Follow companies before a matching role is posted. Review the evidence, future-role forecasts, founder drafts, and proposed proof of work.</p>
+{% if value.get('settings') and not value.settings.get('predict_enabled', True) %}<wa-callout variant="neutral">Predictive research is paused in company discovery settings. Saved reports remain available.</wa-callout>{% endif %}
+{% for company in predictive.get('companies', []) %}
+{% set latest_report = company.get('report') or {} %}
+{% set previous_report = latest_report.get('previous_report') or {} %}
+{% set report = previous_report if company.status == 'error' and previous_report else latest_report %}
+{% set analytics = report.get('analytics') or {} %}
+{% set audit = report.get('audit') or {} %}
+{% set draft = report.get('draft') or {} %}
+{% set hiring = analytics.get('hiring') or {} %}
+<article class="source-card">
+  <div class="section-heading">
+    <div><h3><a href="{{ company.website }}" target="_blank" rel="noopener noreferrer">{{ company.company }}</a></h3>{% if company.updated_at %}<small>Updated <time data-time datetime="{{ company.updated_at }}">{{ company.updated_at }}</time></small>{% endif %}</div>
+    <wa-badge variant="{{ status_variant(company.status) }}">{{ company.status|label }}</wa-badge>
+  </div>
+  {% set held = company.outcome in ['contacted', 'followed_up', 'replied', 'rejected', 'closed'] %}
+  {% if company.last_error %}<wa-callout variant="warning"><p class="text-value">{{ company.last_error }}</p>{% if company.next_at and company.status != 'paused' and not held %}<small>Next retry: <time data-time datetime="{{ company.next_at }}">{{ company.next_at }}</time></small>{% endif %}</wa-callout>{% endif %}
+  {% if company.status == 'error' and previous_report %}<wa-callout variant="neutral">The refresh failed. Showing the last completed report and its saved evidence.{% if previous_report.get('profile_fingerprint') != latest_report.get('profile_fingerprint') %} Your candidate material has changed since this report was created.{% endif %}</wa-callout>{% endif %}
+  {% if report.get('coverage_gaps') %}<wa-callout variant="warning"><strong>Some research sources could not be read</strong><ul>{% for gap in report.coverage_gaps %}<li>{{ gap }}</li>{% endfor %}</ul></wa-callout>{% endif %}
+  {% if held %}<p class="muted">Research is on hold while the outcome is {{ company.outcome|label }}. Set the outcome to Reviewing to research this company again.</p>{% endif %}
+  {% if company.get('research_eligible') is sameas false %}<p class="muted">This company is in the passive or ignored tier. Watch it explicitly in Discovery signals to request active research.</p>{% endif %}
+  <div class="toolbar">
+    {% if not read_only and not held and company.get('research_eligible') is not sameas false %}{% if company.status == 'paused' %}{{ action('company-discovery/predictive-action', 'Resume research', {'website':company.website, 'action':'resume'}, 'company-discovery') }}{% else %}{{ action('company-discovery/predictive-action', 'Research again', {'website':company.website, 'action':'retry'}, 'company-discovery') }}{{ action('company-discovery/predictive-action', 'Pause research', {'website':company.website, 'action':'pause'}, 'company-discovery') }}{% endif %}{% endif %}
+  </div>
+  {% if analytics %}
+  <div class="metrics">
+    {{ metric('Profile alignment', ('%.0f%%'|format(100 * analytics.alignment)) if analytics.get('alignment') is number else none, 'Semantic match to your experience') }}
+    {{ metric('Company trajectory', {'steady_state':'Steady', 'hurdle_state':'Rapid change', 'insufficient_history':'Limited history', 'unestimable':'Uncertain'}.get(analytics.get('regime'), 'Unknown')) }}
+    {{ metric('Escalation estimate', ('%.0f%%'|format(100 * analytics.escalation)) if analytics.get('escalation') is number else none, 'Changing company language; not a hiring probability') }}
+  </div>
+  {% if analytics.get('regime') == 'insufficient_history' %}<p class="muted">Company publications cover {{ analytics.get('dated_authored_days', 0) }} dated days; at least {{ analytics.get('minimum_days', 5) }} are needed to estimate a trajectory. Research will retain new evidence as it appears.</p>{% elif analytics.get('regime') == 'unestimable' %}<p class="muted">The available history does not support a reliable trajectory estimate.</p>{% endif %}
+  <details>
+    <summary>Future-role forecasts and observed hiring</summary>
+    <h4>Possible future roles</h4>
+    <p class="muted">These are forecasts from company and role similarity, not confirmed openings.</p>
+    {% for role in analytics.get('predicted_roles', []) %}
+    <p><strong>{{ role.get('titles', [])|join(' · ') }}</strong>{% if role.get('similarity') is number %}<small>Semantic similarity {{ '%.0f%%'|format(100 * role.similarity) }}</small>{% endif %}</p>
+    {% if role.get('example_urls') %}<ul>{% for url in role.example_urls %}<li><a href="{{ url }}" target="_blank" rel="noopener noreferrer">Comparable role evidence</a></li>{% endfor %}</ul>{% endif %}
+    {% else %}<p class="muted">{{ {'existing_or_unassessed_target_openings':'This company already has observed openings to review, so future-role forecasts are held back.', 'insufficient_posting_corpus':'More observed vacancies are needed to identify comparable roles.', 'no_supported_archetype':'No comparable role is supported by the current evidence.'}.get(analytics.get('predicted_role_status'), 'No future-role forecast is supported by the current evidence.') }}</p>{% endfor %}
+    <h4>Observed hiring history</h4>
+    {% for scope in hiring.get('scopes', []) %}
+    <p><strong>{% if scope.get('source_url') %}<a href="{{ scope.source_url }}" target="_blank" rel="noopener noreferrer">Career board {{ loop.index }}</a>{% else %}Career board {{ loop.index }}{% endif %}</strong>{% if scope.get('latest_total') is number %} · {{ scope.latest_total }} vacancies observed{% endif %}{% if scope.get('latest_relevant') is number %}, {{ scope.latest_relevant }} relevant to your search{% endif %}{% if scope.get('observed_at') %}<small>Last observed <time data-time datetime="{{ scope.observed_at }}">{{ scope.observed_at }}</time></small>{% endif %}</p>
+    {% if scope.get('slope_per_day') is number %}<p>{{ scope.get('direction', 'stable')|label }} posting count · {{ '%+.2f'|format(scope.slope_per_day) }} per day over {{ scope.get('observed_days', 0) }} observed days.</p>{% else %}<p class="muted">{{ scope.get('observed_days', 0) }} observed days; at least {{ scope.get('minimum_days', 5) }} are needed to estimate a hiring trend.</p>{% endif %}
+    {% set burst = scope.get('hawkes') or {} %}{% if burst.get('burst_ratio') is number %}<p>Recent posting arrival rate: {{ '%.1f'|format(burst.burst_ratio) }} times its baseline.</p>{% elif burst.get('status') == 'insufficient_arrivals' %}<p class="muted">{{ burst.get('arrivals', 0) }} new postings observed; at least {{ burst.get('minimum_arrivals', 6) }} are needed to estimate a posting burst.</p>{% elif burst.get('status') == 'insufficient_observation_window' %}<p class="muted">Posting bursts need at least {{ burst.get('minimum_days', 7) }} days of observation.</p>{% endif %}
+    {% else %}<p class="muted">No posting history has been recorded for this company.</p>{% endfor %}
+    {% if hiring.get('persistent_roles') %}<h4>Repeatedly observed vacancies</h4><ul>{% for role in hiring.persistent_roles %}<li><a href="{{ role.url }}" target="_blank" rel="noopener noreferrer">{{ role.title }}</a> · {{ role.observed_days }} observed days{% if role.last_seen_at %}<small>Last seen <time data-time datetime="{{ role.last_seen_at }}">{{ role.last_seen_at }}</time></small>{% endif %}</li>{% endfor %}</ul>{% endif %}
+    {% if hiring.get('repost_candidates') %}<h4>Possible reposts</h4><ul>{% for role in hiring.repost_candidates %}<li><a href="{{ role.url }}" target="_blank" rel="noopener noreferrer">{{ role.title }}</a> resembles a <a href="{{ role.previous_url }}" target="_blank" rel="noopener noreferrer">previously observed listing</a> after {{ role.gap_days }} days. The reason for the new listing is unknown.</li>{% endfor %}</ul>{% endif %}
+  </details>
+  {% endif %}
+  {% if audit %}
+  <details open>
+    <summary>Independent evidence review</summary>
+    {% if audit.get('alignment') is number %}<p>Reviewed fit: {{ '%.0f%%'|format(100 * audit.alignment) }}</p>{% endif %}
+    <p class="text-value">{{ audit.get('diagnosis', '') }}</p>
+    {% if audit.get('risk') %}<p><strong>Risks:</strong> {{ audit.risk }}</p>{% endif %}
+    {% if audit.get('uncertainties') %}<h4>Unresolved questions</h4><ul>{% for question in audit.uncertainties %}<li>{{ question }}</li>{% endfor %}</ul>{% endif %}
+    {% if audit.get('evidence') %}<details><summary>Review evidence</summary>{{ quoted_evidence(audit.evidence) }}</details>{% endif %}
+  </details>
+  {% endif %}
+  {% if draft %}
+  <details>
+    <summary>Founder draft and proof-of-work brief</summary>
+    {% set memo = draft.get('founder_memo') or {} %}
+    {% if memo %}<h4>{{ memo.get('subject') or 'Founder memo' }}</h4><p class="text-value">{{ memo.get('body', '') }}</p>{% endif %}
+    {% set artifact = draft.get('artifact_brief') or {} %}
+    {% if artifact %}
+    <h4>{{ artifact.get('title') or 'Proposed proof of work' }}</h4>
+    <p class="muted">Proposed work{% if artifact.get('estimated_days') is number %} · {{ artifact.estimated_days }} days{% endif %}. Build and verify the artifact before describing it as completed work.</p>
+    <p>{{ artifact.get('deliverable', '') }}</p>
+    {% if artifact.get('steps') %}<h4>Build steps</h4><ol>{% for step in artifact.steps %}<li>{{ step }}</li>{% endfor %}</ol>{% endif %}
+    {% if artifact.get('verification') %}<h4>How to verify the result</h4><ul>{% for step in artifact.verification %}<li>{{ step }}</li>{% endfor %}</ul>{% endif %}
+    {% endif %}
+    {% if draft.get('evidence') %}<details><summary>Checked draft evidence</summary>{{ quoted_evidence(draft.evidence) }}</details>{% endif %}
+    <p class="muted">Reviewable draft. No message has been sent by predictive research.</p>
+  </details>
+  {% endif %}
+  {% if report.get('documents') %}
+  <details><summary>Company evidence ({{ report.documents|length }} documents)</summary>
+    <ul class="records">{% for document in report.documents %}<li><a href="{{ document.url }}" target="_blank" rel="noopener noreferrer">{{ document.title or 'Company document' }}</a><small>{% if document.event_date %}{{ {'grant_award':'Awarded', 'publication':'Published'}.get(document.get('date_kind'), 'Event date') }} <time data-time datetime="{{ document.event_date }}">{{ document.event_date }}</time>{% else %}Event date unknown{% endif %}{% if document.observed_at %} · Read <time data-time datetime="{{ document.observed_at }}">{{ document.observed_at }}</time>{% endif %}{% if document.get('truncated') %} · Partial document{% endif %}</small>{% if document.get('coverage_gaps') and not report.get('coverage_gaps') %}<ul>{% for gap in document.coverage_gaps %}<li>{{ gap }}</li>{% endfor %}</ul>{% endif %}</li>{% endfor %}</ul>
+  </details>
+  {% elif not analytics and not company.last_error %}<p class="muted">Research is waiting for its next scheduled pass.</p>{% endif %}
+  <details>
+    <summary>Track your outcome{% if company.outcome %} · {{ company.outcome|label }}{% endif %}</summary>
+    {% if company.notes %}<p class="text-value">{{ company.notes }}</p>{% endif %}
+    {% if not read_only %}
+    <form id="predictive-outcome-{{ company.website|urlencode }}" class="edit-form" method="post" action="/ui/actions/company-discovery/predictive-outcome" hx-post="/ui/actions/company-discovery/predictive-outcome" hx-target="this" hx-select="unset" hx-swap="outerHTML" hx-sync="this:drop" hx-disabled-elt="find wa-button">
+      <input type="hidden" name="_view" value="company-discovery"><input type="hidden" name="_payload" value="{{ {'website':company.website, 'revision':company.revision}|tojson|forceescape }}">
+      <div class="form-fields"><wa-select name="outcome" label="Outcome" required>{% for choice in ['reviewing', 'contacted', 'followed_up', 'replied', 'rejected', 'closed'] %}<wa-option value="{{ choice }}" {% if choice == (company.outcome or 'reviewing') %}selected{% endif %}>{{ choice|label }}</wa-option>{% endfor %}</wa-select><wa-textarea name="notes" label="Your notes" value="{{ company.notes or '' }}" maxlength="4000" rows="3" resize="vertical"></wa-textarea></div>
+      <p class="muted">Record what happened. Saving an outcome does not send or schedule a message.</p>
+      <div data-errors role="alert"></div><wa-button type="submit" variant="neutral" appearance="outlined">Save outcome</wa-button>
+    </form>
+    {% endif %}
+  </details>
+</article>
+{% else %}{{ empty('No predictive reports yet.', 'Company research runs alongside discovery and builds its history from saved company evidence.') }}{% endfor %}
+<h3 class="section-divider">Discovery signals</h3>
+{% if value.signals %}
+<div class="table-wrap"><table class="table"><thead><tr><th>Company</th><th>Signal</th><th>Fit</th><th>Evidence</th><th>Watch</th></tr></thead><tbody>
+{% for item in value.signals %}<tr>
+  <th><a href="{{ item.website }}" target="_blank" rel="noopener noreferrer">{{ item.company }}</a><small>{{ item.detail.market }}</small></th>
+  <td>{{ item.signal_type|label }}{% if item.event_date %}<small><time data-time datetime="{{ item.event_date }}">{{ item.event_date }}</time></small>{% endif %}</td>
+  <td>{{ item.score }}<small>{{ item.decision|label }}</small><details><summary>Why this score</summary>{% for reason in item.detail.score_reasons %}<p>{{ reason.signal|label }}: {{ '%+d'|format(reason.points) }}</p>{% endfor %}</details></td>
+  <td><a href="{{ item.source_url }}" target="_blank" rel="noopener noreferrer">{{ item.source_name }}</a><details><summary>Supporting evidence</summary><blockquote>{{ item.detail.quote }}</blockquote>{% if item.detail.get('verification_error') %}<p>{{ item.detail.verification_error }}</p>{% endif %}</details></td>
+  <td>{% if item.target_id %}<a href="/ui/targets/{{ item.target_id }}">{{ item.target_state|label }} target</a>{% elif not read_only %}{{ action('company-discovery/watch','Watch company',{'id':item.id},'company-discovery') }}{% endif %}</td>
+</tr>{% endfor %}
+</tbody></table></div>
+{% else %}{{ empty('No company signals yet.','Company discovery runs alongside job discovery. Add a source below or let the configured directories produce candidates.') }}{% endif %}
+<h3>Company sources</h3>
+{% if value.get('feed_capabilities') %}<details><summary>Funding and company feed connections</summary>
+<p><a href="/ui/settings?section=connections">Manage saved connection settings</a></p>
+<ul class="records">{% for feed in value.feed_capabilities %}<li><strong>{{ feed.name }}</strong> · {{ feed.status|label }}<p>{{ feed.detail }}</p></li>{% endfor %}</ul>
+</details>{% endif %}
+<p class="section-note">Research allocation uses observed company and job yield, confirmed applications, and trusted interview and offer outcomes, while retaining exploration of overdue sources.</p>
+<div class="table-wrap"><table class="table"><thead><tr><th>Source</th><th>State</th><th>Companies</th><th>Relevant</th><th>Matching jobs</th><th>Confirmed applications</th><th>Interviews</th><th>Offers</th><th>Yield</th><th>Latest check</th><th>Actions</th></tr></thead><tbody>
+{% for source in value.sources %}<tr>
+  <th><a href="{{ source.url }}" target="_blank" rel="noopener noreferrer">{{ source.name }}</a><small>{{ source.market }} · {{ source.kind|label }}</small></th>
+  <td>{{ source.state|label }}</td><td>{{ source.companies }}</td><td>{{ source.relevant }}</td><td>{{ source.jobs }}</td><td>{{ source.applications }}</td>
+  <td>{{ source.get('interviews', 0) }}</td><td>{{ source.get('offers', 0) }}</td><td>{{ '%.2f'|format(source.get('yield_score', 0)) }}</td>
+  <td>{% if source.last_checked_at %}<time data-time datetime="{{ source.last_checked_at }}">{{ source.last_checked_at }}</time>{% else %}Not checked{% endif %}{% if source.last_error %}<small>{{ source.last_error }}</small>{% endif %}</td>
+  <td>{% if not read_only %}{% if source.state == 'paused' %}{{ action('company-discovery/source-action','Resume',{'id':source.id,'action':'resume'},'company-discovery') }}{% else %}{{ action('company-discovery/source-action','Check again',{'id':source.id,'action':'check'},'company-discovery') }}{{ action('company-discovery/source-action','Pause',{'id':source.id,'action':'pause'},'company-discovery') }}{% endif %}{% endif %}</td>
+</tr>{% endfor %}
+</tbody></table></div>

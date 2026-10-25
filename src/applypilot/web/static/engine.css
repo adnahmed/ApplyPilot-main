@@ -1,0 +1,627 @@
+/* Engine data stays visible. Existing theme variables and native table semantics. */
+.engine-overview {
+    min-width: 0;
+    margin-bottom: 1.4rem
+}
+
+.engine-section-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin: 0 0 1rem
+}
+
+.engine-section-head h2 {
+    font-size: 1.25rem
+}
+
+.engine-section-head p {
+    font-size: .85rem;
+    margin-top: .25rem
+}
+
+.engine-section-head .fine-print {
+    white-space: nowrap;
+    margin-top: .3rem
+}
+
+.engine-overview .card {
+    margin-bottom: 1rem;
+    min-width: 0
+}
+
+.engine-overview .card-head {
+    gap: .8rem;
+    align-items: flex-start;
+    flex-wrap: wrap
+}
+
+.engine-overview .card-head h2 {
+    font-size: 1rem
+}
+
+.engine-overview .card-head p {
+    font-size: .78rem;
+    line-height: 1.5
+}
+
+.engine-overview .card-foot {
+    font-size: .75rem;
+    line-height: 1.6;
+    margin: 0
+}
+
+.engine-metrics {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    margin-bottom: 1rem;
+    overflow: hidden
+}
+
+.engine-metric {
+    padding: 1rem;
+    border-right: 1px solid var(--line);
+    min-width: 0
+}
+
+.engine-metric:last-child {
+    border: 0
+}
+
+.engine-metric>span {
+    font-size: .76rem;
+    color: var(--muted);
+    display: block;
+    min-height: 2.5em
+}
+
+.engine-metric>strong {
+    display: block;
+    font-variant-numeric: tabular-nums;
+    font-size: 1.65rem;
+    line-height: 1.5;
+    color: var(--ink)
+}
+
+.engine-metric>small {
+    display: block;
+    color: var(--muted);
+    font-size: .72rem;
+    line-height: 1.5
+}
+
+.engine-main-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+    gap: 1rem;
+    align-items: start
+}
+
+.engine-state {
+    display: inline-block;
+    padding: .2rem .5rem;
+    border-radius: 5px;
+    background: var(--surface-sub);
+    border: 1px solid var(--line);
+    color: var(--muted);
+    font-size: .7rem;
+    font-weight: 500;
+    line-height: 1.35;
+    white-space: normal
+}
+
+.engine-state.running {
+    background: var(--green-pale);
+    color: var(--green)
+}
+
+.engine-state.waiting {
+    background: var(--orange-pale);
+    color: var(--orange)
+}
+
+.engine-issues {
+    color: var(--red);
+    font-weight: 600
+}
+
+.engine-overview .table-scroll .engine-stages {
+    width: 100%;
+    min-width: 0;
+    table-layout: fixed
+}
+
+.engine-stages thead th:first-child {
+    width: 36%
+}
+
+.engine-stages thead th:not(:first-child) {
+    width: 21.33%
+}
+
+.engine-stages th,
+.engine-stages td {
+    padding: .65rem .65rem;
+    text-align: right;
+    vertical-align: middle;
+    font-size: .8rem;
+    white-space: normal;
+    line-height: 1.4;
+    border-bottom: 1px solid var(--line)
+}
+
+.engine-stages thead th {
+    font-size: .69rem;
+    color: var(--muted)
+}
+
+.engine-stages th:first-child {
+    text-align: left
+}
+
+.engine-stages tbody th {
+    font-weight: 500;
+    color: var(--ink);
+    text-transform: none;
+    letter-spacing: normal
+}
+
+.engine-stages tbody th strong {
+    display: block;
+    font-size: .82rem;
+    font-weight: 600;
+    margin-bottom: .3rem
+}
+
+.engine-stages td {
+    font-variant-numeric: tabular-nums
+}
+
+.engine-stages small,
+.engine-sources small {
+    display: block;
+    color: var(--muted);
+    font-size: .68rem;
+    font-weight: 400
+}
+
+.engine-current {
+    padding: 0 1.1rem .7rem;
+    max-height: 37rem;
+    overflow: auto
+}
+
+.engine-empty {
+    font-size: .82rem;
+    line-height: 1.65;
+    padding: .8rem 1rem;
+    color: var(--muted)
+}
+
+.engine-work-item {
+    padding: .85rem 0;
+    border-bottom: 1px solid var(--line)
+}
+
+.engine-work-item:last-child {
+    border: 0
+}
+
+.engine-work-item>div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .5rem;
+    margin-bottom: .5rem
+}
+
+.engine-work-item time {
+    font-size: .7rem;
+    color: var(--muted);
+    white-space: nowrap
+}
+
+.engine-work-item .job-link {
+    white-space: normal;
+    line-height: 1.5;
+    font-size: .86rem;
+    max-width: 100%;
+    text-align: left
+}
+
+.engine-work-item p {
+    font-size: .75rem;
+    margin-top: .2rem;
+    overflow-wrap: anywhere
+}
+
+.engine-worker-strip {
+    padding: 0 1rem;
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap
+}
+
+.engine-worker {
+    flex: 1 1 16rem;
+    background: var(--surface-sub);
+    padding: .8rem;
+    border-radius: 8px;
+    margin: 0 0 .8rem
+}
+
+.engine-worker>div {
+    display: flex;
+    justify-content: space-between;
+    gap: .5rem
+}
+
+.engine-worker p {
+    font-size: .8rem;
+    margin: .35rem 0;
+    overflow-wrap: anywhere
+}
+
+.engine-worker small {
+    font-size: .72rem;
+    color: var(--muted)
+}
+
+.engine-service-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0 1.2rem;
+    padding: 0 1.2rem 1rem
+}
+
+.engine-service-grid article {
+    border-top: 1px solid var(--line);
+    padding: .85rem 0 .35rem;
+    min-width: 0
+}
+
+.engine-service-grid article>div {
+    display: flex;
+    gap: .5rem;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap
+}
+
+.engine-service-grid strong {
+    font-size: .8rem
+}
+
+.engine-service-grid small {
+    display: block;
+    margin-top: .4rem;
+    font-size: .72rem;
+    color: var(--muted);
+    line-height: 1.55
+}
+
+.engine-search {
+    display: grid;
+    grid-template-columns: 1fr 1fr 2fr;
+    gap: 1rem;
+    padding: 0 1.2rem 1rem
+}
+
+.engine-search>div {
+    min-width: 0
+}
+
+.engine-search span {
+    display: block;
+    color: var(--muted);
+    font-size: .7rem
+}
+
+.engine-search strong {
+    display: block;
+    font-size: 1.2rem;
+    font-variant-numeric: tabular-nums
+}
+
+.engine-search small {
+    color: var(--muted);
+    font-size: .69rem
+}
+
+.engine-search p {
+    font-size: .8rem;
+    color: var(--ink);
+    overflow-wrap: anywhere
+}
+
+.engine-search-text p+span {
+    margin-top: .6rem
+}
+
+.engine-source-now {
+    font-size: .77rem;
+    padding: 0 1.2rem 1rem
+}
+
+.engine-source-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    margin-top: .5rem
+}
+
+.engine-source-tags>span {
+    display: block;
+    background: var(--surface-sub);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: .4rem .6rem;
+    overflow-wrap: anywhere
+}
+
+.engine-source-tags small {
+    color: var(--muted)
+}
+
+.engine-source-card .table-scroll {
+    max-height: 24rem;
+    overflow: auto
+}
+
+.engine-sources {
+    min-width: 660px;
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0
+}
+
+.engine-sources th,
+.engine-sources td {
+    font-size: .78rem;
+    white-space: normal;
+    vertical-align: top;
+    padding: .7rem .85rem;
+    border-bottom: 1px solid var(--line)
+}
+
+.engine-sources thead th {
+    position: sticky;
+    top: 0;
+    background: var(--surface-sub);
+    z-index: 1;
+    font-size: .7rem
+}
+
+.engine-sources tbody th {
+    color: var(--ink);
+    text-transform: none;
+    letter-spacing: normal;
+    font-weight: 600
+}
+
+.engine-recent-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    padding: 0 1.2rem 1.2rem
+}
+
+.engine-recent-grid h3 {
+    font-size: .8rem;
+    color: var(--muted);
+    border-bottom: 1px solid var(--line);
+    padding-bottom: .6rem
+}
+
+.engine-recent-item {
+    padding: .7rem 0;
+    border-bottom: 1px solid var(--line)
+}
+
+.engine-recent-item:last-child {
+    border: 0
+}
+
+.engine-recent-item>div {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: .6rem
+}
+
+.engine-recent-item .job-link {
+    font-size: .82rem;
+    white-space: normal;
+    line-height: 1.5;
+    max-width: 100%
+}
+
+.engine-recent-item p,
+.engine-recent-item time {
+    font-size: .71rem;
+    color: var(--muted)
+}
+
+.engine-recent-item p {
+    overflow-wrap: anywhere
+}
+
+.engine-score {
+    white-space: nowrap;
+    font-size: .8rem;
+    color: var(--ink)
+}
+
+@media(max-width:1250px) {
+    .engine-metrics {
+        grid-template-columns: repeat(3, minmax(0, 1fr))
+    }
+
+    .engine-metric:nth-child(3n) {
+        border-right: 0
+    }
+
+    .engine-metric:nth-child(-n+3) {
+        border-bottom: 1px solid var(--line)
+    }
+
+    .engine-metric>span {
+        min-height: 0
+    }
+
+    .engine-main-grid {
+        grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr)
+    }
+}
+
+@media(max-width:1000px) {
+    .engine-main-grid {
+        grid-template-columns: 1fr
+    }
+
+    .engine-current {
+        max-height: 25rem
+    }
+
+    .engine-service-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr))
+    }
+
+    .engine-section-head {
+        flex-wrap: wrap
+    }
+
+    .engine-search {
+        grid-template-columns: 1fr 1fr
+    }
+
+    .engine-search-text {
+        grid-column: 1/-1
+    }
+}
+
+@media(max-width:600px) {
+    .engine-metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr))
+    }
+
+    .engine-metric {
+        padding: .8rem;
+        border-right: 1px solid var(--line) !important;
+        border-bottom: 1px solid var(--line)
+    }
+
+    .engine-metric:nth-child(2n) {
+        border-right: 0 !important
+    }
+
+    .engine-metric:nth-last-child(-n+2) {
+        border-bottom: 0
+    }
+
+    .engine-metric>strong {
+        font-size: 1.5rem
+    }
+
+    .engine-service-grid,
+    .engine-recent-grid {
+        grid-template-columns: 1fr
+    }
+
+    .engine-overview .card-head {
+        padding: 1rem
+    }
+
+    .engine-stages th,
+    .engine-stages td {
+        padding: .55rem .35rem;
+        font-size: .74rem
+    }
+
+    .engine-stages tbody th strong {
+        font-size: .76rem
+    }
+
+    .engine-stages thead th {
+        font-size: .65rem
+    }
+
+    .engine-state {
+        font-size: .65rem;
+        padding: .18rem .3rem
+    }
+
+    .engine-stages thead th:first-child {
+        width: 38%
+    }
+
+    .engine-stages thead th:not(:first-child) {
+        width: 20.66%
+    }
+
+    .engine-section-head .fine-print {
+        white-space: normal
+    }
+
+    .engine-source-card .table-scroll:focus-visible {
+        outline: 3px solid var(--blue);
+        outline-offset: -3px
+    }
+}
+
+.engine-live-column {
+    min-width: 0
+}
+
+.engine-live-column .engine-recent-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem
+}
+
+/* Complete stage inventory is visible on both Overview and Engine. */
+.overview-stage-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 1rem;
+    padding: 0 1.2rem 1.2rem
+}
+
+.overview-stage-grid article {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: .85rem;
+    min-width: 0;
+    background: var(--surface-sub)
+}
+
+.overview-stage-grid strong {
+    display: block;
+    margin-bottom: .4rem;
+    font-size: .83rem
+}
+
+.overview-stage-grid small,
+.engine-stages .engine-stage-reason {
+    display: block;
+    margin-top: .4rem;
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+    color: var(--muted);
+    font-size: .72rem
+}
+
+.engine-stages thead th:first-child {
+    width: 48%
+}
+
+.engine-stages thead th:not(:first-child) {
+    width: 17.33%
+}
+
+.engine-stage-card .table-scroll {
+    max-height: none
+}

@@ -1,0 +1,4 @@
+# Keep native durability/retention/limits. No "disable safety" configuration.
+limit.maxIDLength:
+  - value: 255
+    constraints: {}

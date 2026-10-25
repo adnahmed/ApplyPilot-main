@@ -1,0 +1,14 @@
+# Search-only capability worker. Building/running this image remains unverified.
+FROM python:3.12-slim
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PYTHONPATH=/app/src APPLYPILOT_DIR=/workspace
+WORKDIR /app
+COPY docs/guides/temporal/requirements-control.txt docs/guides/temporal/requirements-search.txt /tmp/
+RUN pip install --no-cache-dir -r /tmp/requirements-search.txt \
+    && useradd --create-home --uid 10001 applypilot \
+    && mkdir /workspace && chown applypilot:applypilot /workspace
+# Copying source does not install the full legacy application dependency set.
+# The research role imports only its named Activities and existing SQL adapter.
+COPY src/applypilot /app/src/applypilot
+USER 10001
+ENTRYPOINT ["python", "-m", "applypilot.orchestration"]
+CMD ["worker", "--roles", "research"]

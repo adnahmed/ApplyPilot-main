@@ -1,0 +1,92 @@
+# Staging example ONLY: not a complete ApplyPilot migration/deployment.
+# A reachable persistent Temporal service, shared application PostgreSQL, and
+# the referenced private Secret must be provisioned separately.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: applypilot-workers
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: applypilot-temporal
+  namespace: applypilot-workers
+data:
+  APPLYPILOT_TEMPORAL_ADDRESS: temporal.temporal.svc.cluster.local:7233
+  APPLYPILOT_TEMPORAL_NAMESPACE: applypilot
+  APPLYPILOT_TEMPORAL_WORKSPACE: default
+  # Change to a provider endpoint reachable from the worker pods.
+  SEARXNG_URL: http://searxng.applypilot.svc.cluster.local:8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: applypilot-workflows
+  namespace: applypilot-workers
+spec:
+  replicas: 2
+  selector:
+    matchLabels: {app: applypilot-workflows}
+  template:
+    metadata:
+      labels: {app: applypilot-workflows}
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 180
+      securityContext: {runAsNonRoot: true, runAsUser: 10001, fsGroup: 10001}
+      containers:
+        - name: worker
+          image: applypilot-temporal-control:local
+          imagePullPolicy: IfNotPresent
+          args: [worker, --roles, workflow]
+          envFrom:
+            - configMapRef: {name: applypilot-temporal}
+          resources:
+            requests: {cpu: 250m, memory: 256Mi}
+            limits: {memory: 1Gi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: workspace, mountPath: /workspace}
+      volumes:
+        - name: workspace
+          emptyDir: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: applypilot-research
+  namespace: applypilot-workers
+spec:
+  replicas: 2
+  selector:
+    matchLabels: {app: applypilot-research}
+  template:
+    metadata:
+      labels: {app: applypilot-research}
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 180
+      securityContext: {runAsNonRoot: true, runAsUser: 10001, fsGroup: 10001}
+      containers:
+        - name: worker
+          image: applypilot-temporal-search:local
+          imagePullPolicy: IfNotPresent
+          args: [worker, --roles, research]
+          envFrom:
+            - configMapRef: {name: applypilot-temporal}
+            # Private Secret must contain APPLYPILOT_DATABASE_URL; credentials
+            # are never supplied in this example or copied into an image.
+            - secretRef: {name: applypilot-research-credentials}
+          resources:
+            requests: {cpu: 500m, memory: 512Mi}
+            limits: {memory: 2Gi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: workspace, mountPath: /workspace}
+      volumes:
+        - name: workspace
+          emptyDir: {}

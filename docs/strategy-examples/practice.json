@@ -1,0 +1,9 @@
+{
+  "session_at": "[Actual session time with timezone]",
+  "kind": "system-design",
+  "scenario": "[The actual mock problem, such as durable payment workflow design]",
+  "assessor": "[Peer name or explicitly self-assessed]",
+  "rubric": {"clarification": 1, "correctness": 1, "communication": 1, "validation": 1, "tradeoffs": 1},
+  "evidence": "[What was observed; replace every sample score with the actual rating]",
+  "next_drill": "[One concrete weakness to practice next]"
+}

@@ -1,0 +1,10 @@
+{
+  "projects": {
+    "litellm-gateway": {
+      "repo": "https://github.com/adnahmed/litellm-gateway.git",
+      "path": "gateway",
+      "tags": ["gateway", "infrastructure", "python"],
+      "provides": ["llm-gateway"]
+    }
+  }
+}

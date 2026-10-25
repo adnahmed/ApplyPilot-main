@@ -1,0 +1,78 @@
+{% from 'macros.html' import status_variant %}
+{% from 'macros.html' import metric, chart %}
+{% from 'work_activity.html' import activity_summary, worker_row %}
+{% from 'pipeline_flow.html' import pipeline_flow %}
+{% from 'automation_work.html' import activity_bubbles %}
+{% set retained = value.get('history') or {} %}
+{% set groups = value.get('worker_groups') or {} %}
+{% set history = retained.get('items') or [] %}
+{% set outcome_rows = [] %}
+{% for name, count in retained.get('counts',{}).items() %}{% set ignored = outcome_rows.append({'label':name,'value':count}) %}{% endfor %}
+
+<div class="metrics">
+  {% if value.get('automation') %}
+  {{ metric('In progress',value.automation.in_progress,'Latest worker reports') }}
+  {{ metric('Queued',value.automation.queued,'Approximate waiting task count') }}
+  {% else %}
+  {{ metric('Working now',groups.get('running',[])|length) }}
+  {{ metric('Waiting or blocked',groups.get('waiting',[])|length) }}
+  {% endif %}
+  {{ metric('Retained outcomes',history|length,'Completed operations and earlier runs') }}
+  {{ metric('Needs attention',history|selectattr('severity','in',['error','critical','warning'])|list|length,'Within the retained history below') }}
+</div>
+
+{% if value.get('automation') %}{{ activity_bubbles(value.automation) }}{% endif %}
+{{ pipeline_flow(value.get('pipeline') or {}) }}
+
+{% if not value.get('automation') %}
+<div class="section-heading"><h3>Current activity</h3><a href="/ui/activity?kind=operations">All operational activity</a></div>
+{% if value.get('activity_counts') %}<p class="muted">Tasks in progress, including those waiting for AI.</p>{% endif %}
+{{ activity_summary(value.get('activity_counts',{})) }}
+<div class="section-heading"><h3>Working now</h3></div>
+{% if groups.get('running') %}
+  <div class="worker-list">{% for category, items in groups.running|groupby('activity.category') %}{% for item in items %}{{ worker_row(item) }}{% endfor %}{% endfor %}</div>
+{% else %}<p class="quiet-empty">No tasks are actively executing in the current report. Waiting tasks and earlier outcomes appear below.</p>{% endif %}
+
+{% if groups.get('waiting') %}
+<div class="section-heading section-divider"><h3>Waiting or blocked</h3><span class="muted">{{ groups.waiting|length }} workers</span></div>
+<div class="worker-list">{% for category, items in groups.waiting|groupby('activity.category') %}{% for item in items %}{{ worker_row(item) }}{% endfor %}{% endfor %}</div>
+{% endif %}
+
+{% if groups.get('unverified') %}
+<div class="section-heading section-divider"><h3>Activity unknown</h3></div>
+<p class="muted">These workers have no fresh report. Their last task may have ended.</p>
+<div class="worker-list">{% for item in groups.unverified %}{{ worker_row(item) }}{% endfor %}</div>
+{% endif %}
+
+{% if groups.get('ended') %}
+<details class="ended-workers section-divider" data-disclosure-key="ended-workers"><summary>Ended workers (<span data-number>{{ groups.ended|length }}</span>)</summary>
+<p class="muted">These workers have stopped. Their retained outcomes are listed below.</p>
+<div class="worker-list">{% for item in groups.ended %}{{ worker_row(item) }}{% endfor %}</div>
+</details>
+{% endif %}
+
+{% endif %}
+{{ chart('Worker outcomes','bar',outcome_rows,[{'key':'value','label':'Recorded operations'}],'Retained journal · previous runs included') }}
+
+<div class="section-heading section-divider"><h3>Completed work and failures</h3><span class="muted">Retained for {{ retained.get('retention_days',3) }} days, subject to log size limits</span></div>
+{% if retained.get('error') %}<wa-callout variant="danger">{{ retained.error }}</wa-callout>{% endif %}
+{% if history %}
+<div class="table-wrap"><table class="table"><caption class="sr-only">Completed work and failures</caption><thead><tr><th scope="col">When</th><th scope="col">Work</th><th scope="col">Source</th><th scope="col">Outcome and reason</th></tr></thead><tbody>
+{% for item in history %}
+{% set work = item|work_activity %}
+<tr>
+  <td><time data-time datetime="{{ item.get('at','') }}">{{ item.get('at','') }}</time>{% if item.get('worker_id') is not none %}<small>Application worker {{ item.worker_id }}</small>{% endif %}</td>
+  <th scope="row">{{ work.title }}{% if work.target %}<small>{{ work.target }}</small>{% endif %}{% if work.company %}<small>{{ work.company }}</small>{% endif %}<small>{{ work.category }}</small></th>
+  <td>{{ item.get('source') or ('Workspace' if work.category == 'Backups' else 'Source unavailable') }}</td>
+  <td><wa-badge variant="{{ status_variant(item.get('severity','info')) }}">{{ (item.get('outcome') or item.get('event') or 'Recorded')|label }}</wa-badge>
+    {% if item.get('worker_id') is not none %}<a href="/ui/detail/worker/{{ item.worker_id }}?{{ urlencode({'trace':item.get('trace_id') or ''}) }}" hx-get="/ui/detail/worker/{{ item.worker_id }}?{{ urlencode({'trace':item.get('trace_id') or ''}) }}" hx-target="#detail-content" hx-select="unset" hx-swap="innerHTML">Open worker log</a>{% endif %}
+    {% if item.get('reason') %}<p class="row-description">{{ item.reason }}</p>{% elif item.get('severity') in ['warning','error','critical'] %}<p class="muted">No error message was recorded for this outcome.</p>{% endif %}
+    {% if item.get('exception_type') %}<small>{{ item.exception_type }}</small>{% endif %}
+    {% set duration = item.get('task_elapsed_seconds',item.get('elapsed_seconds')) %}{% if duration is number %}<small>{{ duration|round(2) }} seconds</small>{% endif %}
+    {% if item.get('trace_id') %}<a href="/api/workers/trace?{{ urlencode({'id':item.trace_id,'source':'agent'}) }}" download="worker-session.json">Download session trace</a>{% endif %}
+  </td>
+</tr>
+{% endfor %}
+</tbody></table></div>
+{% else %}<p class="quiet-empty">No completed operations are retained yet. Outcomes will stay here when workers move on.</p>{% endif %}
+{% if retained.get('truncated') %}<p class="muted">Showing a bounded sample of recent history. The support download includes additional worker logs and tool traces.</p>{% endif %}

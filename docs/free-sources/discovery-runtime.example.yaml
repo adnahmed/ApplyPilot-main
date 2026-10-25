@@ -1,0 +1,44 @@
+# MERGE into ~/.applypilot/discovery_runtime.yaml; do not discard existing policy.
+# Connections -> Use Uncapped free/local preset migrates existing positive caps.
+# -1 = uncapped WORK VOLUME; 0 = off; positive integers = explicit finite caps.
+# Page sizes, worker pools, paid budgets and send controls are NOT uncapped.
+# Also enable these sources in your existing searches.yaml source selection.
+# CLI --source only narrows the enabled portfolio; it does not grant access.
+authorized_sources:
+  web_search: true
+  twitter: false            # Enable after authorizing your own account/session.
+  linkedin_posts: false
+paid_budget: 0.0
+paid_request_cost: 0.0
+request_budget: -1
+http_budget: -1
+model_budget: -1
+browser_budget: -1
+evidence_budget: -1
+max_pages_per_task: -1
+probe_limit: -1
+request_defaults:
+  results_per_site: -1
+# Omit worker_ceiling, discovery_http_slots and discovery_model_slots to use
+# finite CPU-aware defaults. Positive explicit values remain supported.
+discovery_browser_slots: 2
+research:
+  enabled: true
+  companies: -1            # The number of companies, not per-company depth.
+  # workers: 16            # Optional positive finite pool; default CPU-aware.
+source_inputs:
+  web_search:
+    mode: search
+    backend: auto          # Reuse configured local search; no paid fallback.
+    limit: -1              # Finite pages until exhaustion/nonprogress/failure.
+  twitter:
+    mode: auto             # Configured Twikit/read-only MCP readers.
+    # Or export / twikit / xactions / x_use.
+    # x_use requires account: YOUR_CONFIGURED_ACCOUNT_ID.
+    limit: -1
+  linkedin_posts:
+    mode: auto             # Configured linkedin-rs / LinkedIn MCP readers.
+    # Or export / linkedin_rs / linkedin_mcp / linkedin_scraper.
+    # linkedin_scraper reads an explicitly supplied company page's posts:
+    # company_url: https://www.linkedin.com/company/YOUR_COMPANY/
+    limit: -1

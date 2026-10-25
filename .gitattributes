@@ -1,0 +1,6 @@
+
+# Docker build inputs and shell scripts need stable LF on Windows checkouts.
+*.patch text eol=lf whitespace=-blank-at-eol,-blank-at-eof
+Dockerfile* text eol=lf
+*.sh text eol=lf
+*.ps1 text eol=crlf

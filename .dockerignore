@@ -1,0 +1,14 @@
+# Restricted host-tool build context. Gateway builds use docs/guides as their context.
+**
+!docs/
+!docs/guides/
+!docs/guides/source-tools/
+!docs/guides/source-tools/**
+!src/
+!src/applypilot/
+!src/applypilot/integrations/
+!src/applypilot/integrations/worker_main.py
+
+# The RLM sandbox contains only its standalone worker, never host credentials.
+!src/applypilot/reasoning/
+!src/applypilot/reasoning/rlm_worker.py

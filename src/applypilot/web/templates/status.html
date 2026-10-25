@@ -1,0 +1,14 @@
+{% from 'macros.html' import status_variant %}
+<div class="runtime-strip">
+  <div class="runtime-main"><strong>Autopilot</strong> <wa-badge variant="{{ status_variant(value.get('state','stopped')) }}">{{ 'Schedules paused' if value.get('state') == 'paused' else ('stopped' if value.get('state') == 'error' and not value.get('active') else value.get('state','stopped'))|label }}</wa-badge>
+    <span class="{{ 'error' if value.get('state') == 'error' else 'muted' }}">{{ value.get('message','')|replace('press Play','choose Start autopilot')|replace('Operations','Activity') }}</span></div>
+  <div class="toolbar">
+    {% set actions = [] %}
+    {% if value.get('can_start') %}{% set actions = [('resume','Resume')] if value.get('managed') else [('start','Start autopilot')] %}{% endif %}
+    {% if value.get('can_pause') and value.get('state') not in ['paused','pausing'] %}{% set actions = actions + [('pause','Pause schedules')] %}{% endif %}
+    {% if value.get('managed') or value.get('active') or value.get('applying') %}{% set actions = actions + [('stop','Stop')] %}{% endif %}
+    {% for action,label in actions %}<form hx-post="/ui/actions/autopilot/control" hx-target="#runtime-action" hx-select="unset" hx-swap="innerHTML" hx-sync="#runtime:drop" hx-disabled-elt="find wa-button">
+      <input type="hidden" name="action" value="{{ action }}"><wa-button type="submit" {% if read_only %}disabled{% endif %} variant="{{ 'brand' if action in ['start','resume'] else 'neutral' }}" appearance="{{ 'accent' if action in ['start','resume'] else 'outlined' }}">{{ label }}</wa-button>
+    </form>{% endfor %}
+  </div><span id="runtime-action" role="status"></span>
+</div>

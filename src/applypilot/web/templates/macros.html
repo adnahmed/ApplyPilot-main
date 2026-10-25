@@ -1,0 +1,65 @@
+{% macro record(value, depth=0) -%}
+{% if value is mapping %}
+<dl class="record">
+{% for key, item in value.items() %}
+{% if item is not none and item != '' %}<div><dt>{{ key|label }}</dt><dd>
+{% if item is mapping or (item is sequence and item is not string) %}
+<wa-details summary="{{ key|label }}{% if item is sequence and item is not string %} ({{ item|length }}){% endif %}">{{ record(item, depth+1) }}</wa-details>
+{% else %}{{ record(item, depth+1) }}{% endif %}</dd></div>{% endif %}
+{% endfor %}</dl>
+{% elif value is sequence and value is not string %}
+{% if value %}<ul class="records">{% for item in value %}<li>{{ record(item, depth+1) }}</li>{% endfor %}</ul>{% else %}<span class="muted">None recorded</span>{% endif %}
+{% elif value is boolean %}{{ 'Yes' if value else 'No' }}
+{% elif value is string and (value.startswith('https://') or value.startswith('http://')) %}<a href="{{ value }}" target="_blank" rel="noopener noreferrer">{{ value }}</a>
+{% else %}<span class="text-value">{{ value if value is not none else 'Not recorded' }}</span>{% endif %}
+{%- endmacro %}
+
+{% macro metric(label, value, detail='') -%}<div class="metric"><span>{{ label }}</span><strong data-number>{{ value if value is not none else '—' }}</strong>{% if detail %}<small>{{ detail }}</small>{% endif %}</div>{%- endmacro %}
+
+{% macro diagnostics(value, label='Technical details') -%}<wa-details class="diagnostics" summary="{{ label }}">{{ record(value) }}</wa-details>{%- endmacro %}
+
+{% macro empty(title, text='', href='', label='') -%}<div class="empty"><h3>{{ title }}</h3>{% if text %}<p class="muted">{{ text }}</p>{% endif %}{% if href %}<wa-button href="{{ href }}" variant="neutral" appearance="outlined">{{ label }}</wa-button>{% endif %}</div>{%- endmacro %}
+
+{% macro action(route, label, payload={}, view='', confirm='') -%}
+<form class="inline-form" method="post" action="/ui/actions/{{ route }}" hx-post="/ui/actions/{{ route }}" hx-target="this" hx-select="unset" hx-swap="outerHTML" hx-sync="this:drop" hx-disabled-elt="find wa-button" {% if confirm %}hx-confirm="{{ confirm }}"{% endif %}>
+<input type="hidden" name="_payload" value="{{ payload|tojson|forceescape }}"><input type="hidden" name="_view" value="{{ view }}">
+<wa-button type="submit" variant="neutral" appearance="outlined" size="s">{{ label }}</wa-button><span data-errors role="alert"></span></form>
+{%- endmacro %}
+
+{% macro icon(name) -%}
+<svg class="ap-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="20" height="20">
+{% if name == 'overview' %}<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>
+{% elif name == 'jobs' %}<rect x="3" y="7" width="18" height="14" rx="2"/><path d="M8 7V4h8v3M3 12c6 3 12 3 18 0M12 12v3"/>
+{% elif name == 'sources' %}<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4"/>
+{% elif name == 'outreach' %}<path d="M21 11a8 8 0 0 1-8 8H7l-5 3 1-6a9 9 0 1 1 18-5Z"/><path d="M7 9h9M7 13h6"/>
+{% elif name == 'outcomes' %}<path d="M4 20V4M4 20h17M8 16v-4M13 16V8M18 16V3"/>
+{% elif name == 'profile' %}<circle cx="12" cy="7" r="4"/><path d="M4 21v-3a8 8 0 0 1 16 0v3"/>
+{% elif name == 'evidence' %}<path d="M8 4H4v17h16V4h-4M8 3h8v4H8zM8 12h8M8 16h5"/>
+{% elif name == 'activity' %}<path d="M2 12h4l3-8 5 16 3-8h5"/>
+{% elif name == 'settings' %}<path d="M4 6h16M4 12h16M4 18h16"/><circle cx="8" cy="6" r="2" fill="var(--surface)"/><circle cx="16" cy="12" r="2" fill="var(--surface)"/><circle cx="10" cy="18" r="2" fill="var(--surface)"/>
+{% elif name == 'gmail' %}<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 6 9 7 9-7"/>
+{% elif name == 'github' %}<circle cx="6" cy="5" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="6" cy="19" r="2"/><path d="M6 7v10M18 8v1a6 6 0 0 1-6 6H6"/>
+{% elif name == 'browseros' %}<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M7 6.5h.01M10 6.5h.01"/>
+{% elif name == 'llm' %}<rect x="6" y="6" width="12" height="12" rx="2"/><rect x="9" y="9" width="6" height="6" rx="1"/><path d="M9 3v3M15 3v3M9 18v3M15 18v3M3 9h3M3 15h3M18 9h3M18 15h3"/>
+{% elif name in ['linkedin','x'] %}<circle cx="9" cy="7" r="3"/><path d="M3 21v-3a6 6 0 0 1 12 0v3M17 4a3 3 0 0 1 0 6M18 14a5 5 0 0 1 3 5v2"/>
+{% elif name == 'theme' %}<circle cx="12" cy="12" r="7"/><path d="M12 5a7 7 0 0 1 0 14Z" fill="currentColor" stroke="none"/>
+{% elif name == 'lock' %}<rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 15v2"/>
+{% elif name == 'plus' %}<path d="M12 5v14M5 12h14"/>
+{% elif name == 'plane' %}<path d="m3 11 18-8-7 18-3-7-8-3Zm8 3 10-11"/>
+{% else %}<circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/>{% endif %}</svg>
+{%- endmacro %}
+
+{% macro chart(title, type, rows, datasets, description='') -%}
+<section class="chart-block"><div class="section-heading"><h3>{{ title }}</h3>{% if description %}<span class="muted">{{ description }}</span>{% endif %}</div>
+{% if rows %}
+<div class="chart-canvas"><canvas data-chart="{{ {'type':type,'rows':rows,'datasets':datasets}|tojson|forceescape }}" role="img" aria-label="{{ title }}. Exact values are available in the data table below."></canvas></div>
+<wa-details class="chart-data" summary="View chart data"><div class="table-wrap"><table class="table"><thead><tr><th>{{ 'Date (UTC)' if type == 'line' else 'Group' }}</th>{% for series in datasets %}<th>{{ series.label }}</th>{% endfor %}</tr></thead><tbody>{% for row in rows %}<tr><th>{{ row.get('date') or row.get('label')|label }}</th>{% for series in datasets %}<td data-number>{{ row.get(series.key,0) }}</td>{% endfor %}</tr>{% endfor %}</tbody></table></div></wa-details>
+{% else %}<div class="chart-empty"><p>No {{ title|lower }} yet.</p><small>Recorded results will appear here as your search progresses.</small></div>{% endif %}</section>
+{%- endmacro %}
+
+{% macro status_variant(state='neutral') -%}
+{%- set state = (state|string|lower).replace('status-','') -%}
+{{- 'success' if state in ['success','succeeded','successful','completed','complete','connected','configured','ready','ready_to_apply','submitted','sent','synced','passed','healthy','available','enabled'] else 'danger' if state in ['failed','error','critical','unavailable','invalid','blocked','rejected'] else 'warning' if state in ['warning','needs_attention','auth_required','rate_limited','degraded','partial','high'] else 'brand' if state in ['running','queued','building','starting','active','info','discovered'] else 'neutral' -}}
+{%- endmacro %}
+
+{% macro badge(text, state='neutral') -%}<wa-badge variant="{{ status_variant(state) }}">{{ text }}</wa-badge>{%- endmacro %}

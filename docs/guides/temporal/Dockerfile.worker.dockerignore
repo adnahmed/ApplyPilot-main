@@ -1,0 +1,15 @@
+**
+!pyproject.toml
+!scripts/
+!scripts/build_backup_tools.py
+!tools/
+!tools/rclone-githubreleases/
+!tools/rclone-githubreleases/**
+!src/
+!src/applypilot/
+!src/applypilot/**
+**/__pycache__
+**/*.pyc
+**/.env
+**/*.pem
+**/*.key

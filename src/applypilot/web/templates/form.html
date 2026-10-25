@@ -1,0 +1,56 @@
+{% macro text_attributes(field) -%}
+{% for attribute in ['minlength', 'maxlength', 'placeholder'] %}{% if field.get(attribute) is not none %} {{ attribute }}="{{ field[attribute] }}"{% endif %}{% endfor %}{% if field.get('readonly') %} readonly{% endif %}
+{%- endmacro %}
+{% macro field_attributes(field) -%}
+name="{{ field.name }}"{% if field.required %} required{% endif %}{% if field.get('help') %} hint="{{ field.help }}"{% endif %}{% if field.get('when') %} data-show-field="{{ field.when.field }}" data-show-value="{{ field.when.value }}"{% endif %}{% if field.kind in ['textarea','json'] %} class="wide"{% endif %}
+{%- endmacro %}
+{% macro control(field) -%}
+{% if field.kind == 'opportunity' %}
+<div class="wide" data-opportunity-picker>
+  <label for="opportunity-search">{{ field.label }}</label>
+  <input id="opportunity-search" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="opportunity-options" aria-describedby="opportunity-hint" placeholder="Type a role, company or URL…" maxlength="200" data-opportunity-search autocomplete="off">
+  <input type="text" name="{{ field.name }}" value="{{ field.value }}" hidden data-opportunity-value>
+  <div id="opportunity-options" role="listbox" aria-label="Opportunities" data-opportunity-options hidden>
+    <button type="button" role="option" data-url="" tabindex="-1">Custom opportunity — enter the details</button>
+    {% for option,label in field.options %}<button type="button" role="option" data-url="{{ option }}" tabindex="-1">{{ label }}</button>{% endfor %}
+  </div>
+  <small id="opportunity-hint" data-opportunity-status role="status">{{ field.help }}</small>
+</div>
+{% elif field.kind == 'rows' %}
+<fieldset class="wide repeat-field" data-rows="{{ field.name }}"><legend>{{ field.label }}</legend><input type="hidden" name="{{ field.name }}.__present" value="1"><div data-row-list>{% for row in field.value %}{{ row_control(field, row, loop.index0) }}{% endfor %}</div><template>{{ row_control(field, {}, '__new__') }}</template><wa-button type="button" size="s" appearance="outlined" data-add-row>{{ field.get('add_label','Add item') }}</wa-button></fieldset>
+{% elif field.kind == 'limit' %}
+<fieldset class="limit-field"><legend>{{ field.label }}</legend><wa-select name="{{ field.name }}.__mode" label="Mode" data-limit-mode><wa-option value="uncapped" {% if field.value == -1 %}selected{% endif %}>Uncapped</wa-option><wa-option value="paused" {% if field.value == 0 %}selected{% endif %}>Paused</wa-option><wa-option value="limited" {% if field.value not in [-1,0] %}selected{% endif %}>Set a limit</wa-option></wa-select><wa-input type="number" name="{{ field.name }}.__value" label="Amount" min="1" step="1" value="{{ field.value if field.value not in [-1,0] else 1 }}" data-limit-value {% if field.value in [-1,0] %}hidden disabled{% endif %}></wa-input></fieldset>
+{% elif field.kind == 'bool' %}
+<wa-checkbox {{ field_attributes(field) }} value="true" {% if field.value %}checked{% endif %}>{{ field.label }}</wa-checkbox>
+{% elif field.kind in ['select','multiselect'] %}
+{% set selected_value = field.value if field.kind == 'multiselect' or field.value in field.options|map(attribute=0)|list else (field.options[0][0] if field.options else '') %}
+<wa-select {{ field_attributes(field) }} label="{{ field.label }}" {% if field.kind == 'multiselect' %}multiple with-clear{% endif %}>{% for option,label in field.options %}<wa-option value="{{ option }}" {% if option == selected_value or (field.kind == 'multiselect' and option in selected_value) %}selected{% endif %}>{{ label }}</wa-option>{% endfor %}</wa-select>
+{% elif field.kind in ['textarea','json','list'] %}
+<wa-textarea {{ field_attributes(field) }} label="{{ field.label }}" rows="{{ field.get('rows',3 if form is defined and form and form.id == 'diary-note' else 5 if field.kind in ['textarea','json'] else 3) }}" value="{{ field.value|join('\n') if field.value is sequence and field.value is not string else field.value }}"{{ text_attributes(field) }} resize="vertical"></wa-textarea>
+{% elif field.kind == 'file' %}
+<label class="form-file"><span>{{ field.label }}</span><input name="{{ field.name }}" type="file" {% if field.required %}required{% endif %}>{% if field.get('help') %}<small class="field-help">{{ field.help }}</small>{% endif %}</label>
+{% elif field.kind == 'hidden' %}
+<input name="{{ field.name }}" type="hidden" value="{{ field.value }}">
+{% else %}
+<wa-input {{ field_attributes(field) }} label="{{ field.label }}" type="{{ 'number' if field.kind == 'percent' else 'text' if field.kind == 'tokens' else field.kind }}" value="{{ field.value|join(', ') if field.kind == 'tokens' and field.value is sequence and field.value is not string else field.value }}" {% if field.kind in ['number','percent'] %}step="{{ field.get('step','any') }}"{% endif %}{% for attribute in ['min','max'] %}{% if field.get(attribute) is not none %} {{ attribute }}="{{ field[attribute] }}"{% endif %}{% endfor %}{{ text_attributes(dict(field, placeholder=field.get('placeholder', 'Words, separated by commas…')) if field.kind == 'tokens' else field) }} autocomplete="{{ field.get('autocomplete') or ('new-password' if field.kind == 'password' else 'email' if field.kind == 'email' else 'off') }}" {% if field.kind == 'password' %}password-toggle{% endif %}></wa-input>
+{% endif %}
+{%- endmacro %}
+{% macro row_control(field,row,index) -%}
+<div class="repeat-row" data-row><input type="hidden" name="{{ field.name }}.{{ index }}._index" value="{{ row.get('_index',-1) }}"><div class="form-fields">{% for column in field.columns %}{{ control(dict(column,name=field.name ~ '.' ~ index ~ '.' ~ column.name,value=row.get(column.name,column.value))) }}{% endfor %}</div><div class="row-actions"><wa-button type="button" size="s" appearance="outlined" data-move-row="up" aria-label="Move item up">Move up</wa-button><wa-button type="button" size="s" appearance="outlined" data-move-row="down" aria-label="Move item down">Move down</wa-button><wa-button type="button" size="s" appearance="outlined" variant="danger" data-remove-row>Remove</wa-button></div></div>
+{%- endmacro %}
+{% if form %}
+<form id="form-{{ form.id }}" class="edit-form card" method="post" action="/ui/actions/{{ form.route }}" enctype="multipart/form-data"
+      hx-post="/ui/actions/{{ form.route }}" hx-encoding="multipart/form-data" hx-target="this" hx-select="unset" hx-swap="outerHTML"
+      hx-sync="this:drop" hx-disabled-elt="find wa-button[type='submit']" hx-indicator="find .htmx-indicator" {% if form.confirm %}hx-confirm="{{ form.confirm }}"{% endif %}>
+<h2>{{ form.title }}</h2>{% if form.note %}<p class="muted">{{ form.note }}</p>{% endif %}
+<input type="hidden" name="_view" value="{{ form.get('view',form_view|default(view)) }}"><input type="hidden" name="_form" value="{{ form.id }}">
+<input type="hidden" name="_payload" value="{{ form.payload|tojson|forceescape }}">
+{% if result is defined %}<wa-callout variant="{{ 'danger' if result.get('state') in ['failed','error','timed_out'] or result.get('error') or result.get('ok') is sameas false else 'neutral' }}" role="status">{% include 'action_result.html' %}</wa-callout>{% endif %}
+<fieldset {% if read_only %}disabled{% endif %}>
+{% if form.id == 'career-report' %}
+<div class="form-fields">{% for field in form.fields if field.group != 'compensation' %}{{ control(field) }}{% endfor %}</div>
+<details><summary>Compensation amounts and overrides (optional)</summary><p class="muted">Current pay comes from your profile. To override it for this report, supply an amount, currency and period together. Different currencies or periods are not converted.</p>
+<div class="form-fields">{% for field in form.fields if field.group == 'compensation' %}{{ control(field) }}{% endfor %}</div></details>
+{% elif form.id.startswith('profile') and form.fields|selectattr('group')|list %}{% for group in form.fields|map(attribute='group')|unique %}<section class="profile-section">{% if group != form.title and group != 'Nationality' %}<h3>{{ group or 'Other profile information' }}</h3>{% endif %}<div class="form-fields">{% for field in form.fields if field.get('group','') == group %}{{ control(field) }}{% endfor %}</div></section>{% endfor %}{% else %}<div class="form-fields">{% for field in form.fields %}{{ control(field) }}{% endfor %}</div>{% endif %}
+<div data-errors role="alert"></div><div class="form-footer"><wa-button type="submit" variant="brand">{{ form.submit }}</wa-button><span class="htmx-indicator">Saving…</span><span class="dirty-label" role="status"></span></div></fieldset></form>
+{% endif %}

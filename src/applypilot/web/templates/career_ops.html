@@ -1,0 +1,58 @@
+{% from 'macros.html' import action, empty, record, status_variant %}
+{% set state_labels = {'pending':'Pending','running':'Preparing','complete':'Completed','error':'Retry needed','needs_input':'Needs input','cancelled':'Cancelled'} %}
+<p class="section-note">Interview briefs and career workflows share this library. Linked Gmail outcomes and verified LinkedIn/X conversations queue preparation automatically. Workflows needing your interview notes or offer terms wait for those details.</p>
+{% if value.get('selected') %}
+<div class="source-card"><h3>{{ value.selected.label }}</h3><div class="toolbar">
+  <a href="/ui/career">All opportunities</a>
+  {% if value.selected.has_brief %}<a href="/api/document?{{ urlencode({'url':value.selected.url,'kind':'brief'}) }}" hx-boost="false">Download latest interview brief</a>{% endif %}
+</div></div>
+{% endif %}
+<h3>Preparation library</h3>
+<nav class="section-tabs" aria-label="Report status">
+{% for state,label in [('', 'All'),('pending','Pending'),('running','Preparing'),('complete','Completed'),('needs_input','Needs input'),('error','Retry needed')] %}
+<a href="/ui/career?{{ urlencode({'job_url':q.get('job_url',''),'state':state}) }}" {% if q.get('state','') == state %}aria-current="page"{% endif %}>{{ label }}</a>
+{% endfor %}
+</nav>
+{% if value.get('reports') %}
+<div class="table-wrap"><table><thead><tr><th>Opportunity</th><th>Workflow</th><th>Status</th><th>Source</th><th>Updated</th></tr></thead><tbody>
+{% for report in value.reports %}
+<tr><td>{{ report.get('company') or 'Custom opportunity' }}{% if report.get('title') %}<br><small>{{ report.title }}</small>{% endif %}</td>
+<td><a href="/ui/career?{{ urlencode({'job_url':report.job_url,'report_id':report.id}) }}">{{ value.modes.get(report.mode, report.mode|label) }}</a></td>
+<td><wa-badge variant="{{ status_variant(report.state) }}">{{ state_labels.get(report.state, report.state|label) }}</wa-badge></td>
+<td>{{ report.source.get('channel','Requested')|label }}</td><td><time data-time datetime="{{ report.updated_at }}">{{ report.updated_at }}</time></td></tr>
+{% endfor %}
+</tbody></table></div>
+{% else %}{{ empty('No preparation in this view.', 'Saved interview briefs and queued career reports appear here. You can also prepare a report below.') }}{% endif %}
+{% set report = value.get('active_report') %}
+{% if report %}
+<article class="source-card">
+<div class="section-heading"><h3>{{ value.modes.get(report.mode, report.mode|label) }}</h3><wa-badge variant="{{ status_variant(report.state) }}">{{ state_labels.get(report.state, report.state|label) }}</wa-badge></div>
+{% if report.mode == 'interview_brief' and report.state == 'complete' %}<a href="/api/document?{{ urlencode({'url':report.job_url,'kind':'brief','report_id':report.id}) }}" hx-boost="false">Download this interview brief</a>{% endif %}
+{% if report.source.get('channel') %}<p>Triggered by {{ report.source.channel|label }}{% if report.source.get('received_at') %} · <time data-time datetime="{{ report.source.received_at }}">{{ report.source.received_at }}</time>{% endif %}</p>{% endif %}
+{% if report.state == 'needs_input' %}<p>Complete the required context in the form below. Interview debriefs need your actual notes; offer reviews need the offer text. Other workflows may need a saved job description or compensation context.</p>{% endif %}
+{% if report.error or report.get('display_error') %}<wa-callout variant="warning">{{ report.get('display_error') or report.error }}{% if report.next_retry_at %}<p>Next retry <time data-time datetime="{{ report.next_retry_at }}">{{ report.next_retry_at }}</time></p>{% endif %}</wa-callout>{% endif %}
+{% if report.state in ['pending','error','cancelled'] and not read_only %}{{ action('career-ops/run', 'Prepare now' if report.state == 'pending' else 'Retry report', {'mode':report.mode,'retry_report_id':report.id}, 'career') }}{% endif %}
+{% for key, section in report.result.items() if key not in ['artifact','session_id','schema_version','input_fingerprint','input_revisions','sources','generated_at','draft_only'] %}
+<section><h4>{{ {'A_role':'A · Role','B_match':'B · Match to your experience','C_level':'C · Level strategy','D_compensation':'D · Compensation','E_personalization':'E · Personalization','F_interview':'F · Interview preparation','G_legitimacy':'G · Posting legitimacy','H_application_answers':'H · Draft application answers'}.get(key, key|label) }}</h4>{{ record(section) }}</section>
+{% endfor %}
+{% if report.result.get('sources') %}<details><summary>Original source material</summary>
+{% for identifier, source in report.result.sources.items() %}<article class="source-card"><h4>{{ source.get('title') or source.get('kind')|label }}</h4><small>{{ identifier }}</small><p class="text-value">{{ source.get('text', '') }}</p></article>{% endfor %}
+</details>{% endif %}
+</article>
+{% endif %}
+{% if value.get('sessions') %}
+<h3>Practice sessions</h3>
+{% for session in value.sessions %}
+<article class="source-card"><h4>Next interview question</h4><p class="text-value">{{ session.next_question }}</p>
+{% if session.job_url %}<a href="/ui/career?{{ urlencode({'job_url':session.job_url}) }}">Open opportunity preparation</a>{% endif %}
+{% if not read_only %}
+<form id="practice-{{ session.id }}" class="edit-form" method="post" action="/ui/actions/career-ops/run" hx-post="/ui/actions/career-ops/run" hx-target="this" hx-select="unset" hx-swap="outerHTML" hx-sync="this:drop" hx-disabled-elt="find wa-button">
+<input type="hidden" name="_view" value="career"><input type="hidden" name="_payload" value="{{ {'mode':'interview_practice','session_id':session.id,'session_revision':session.revision,'job_url':session.job_url}|tojson|forceescape }}">
+<wa-textarea name="answer" label="Your answer" rows="5" maxlength="16000" required></wa-textarea>
+<wa-input name="effort_minutes" label="Minutes spent practicing (optional)" type="number" min="0" step="1"></wa-input>
+<div data-errors role="alert"></div><wa-button type="submit" variant="brand">Review answer and continue</wa-button></form>
+{% endif %}</article>
+{% endfor %}{% endif %}
+{% if value.get('stories') %}<details><summary>Your sourced story drafts ({{ value.stories|length }})</summary>
+<p class="muted">Review the original evidence and add your own reflection before using these preparation drafts.</p>
+{% for story in value.stories %}<article class="source-card">{{ record(story.story) }}</article>{% endfor %}</details>{% endif %}

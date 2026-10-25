@@ -1,0 +1,17 @@
+{% from 'macros.html' import status_variant %}
+{% from 'macros.html' import empty %}
+{% from 'components.html' import section_header, read_more %}
+{% call section_header('Discovery connections','Check access to each source and resolve connection problems here.') %}<wa-button href="/ui/settings?section=connections" variant="neutral" appearance="outlined">Manage connections</wa-button><wa-button href="/ui/sources?tab=preferences" variant="brand" appearance="accent">Choose search sources</wa-button>{% endcall %}
+{% include 'connections.html' %}
+{{ section_header('Search activity','Results from discovery runs. Connection checks above report access separately.') }}
+{% if value.get('health') %}
+<div class="table-wrap"><table class="table source-table"><thead><tr><th scope="col">Source</th><th scope="col">Last run</th><th scope="col">Found</th><th scope="col">Newly saved</th><th scope="col">Latest result</th></tr></thead><tbody>
+{% for source in value.health %}
+  <tr><th scope="row">{{ source.source_name|label }}<wa-badge variant="{{ status_variant(source.status) }}">{{ source.status|label }}</wa-badge></th>
+    <td>{% if source.last_run_at %}<time data-time datetime="{{ source.last_run_at }}">{{ source.last_run_at }}</time>{% else %}<span class="muted">Not run yet</span>{% endif %}{% if source.last_success_at %}<small>Last success <time data-time datetime="{{ source.last_success_at }}">{{ source.last_success_at }}</time></small>{% endif %}</td>
+    <td><span data-number>{{ source.jobs_found if source.jobs_found is not none else '—' }}</span>{% if source.get('activity',{}).get('last_acquisition') %}<small>{{ source.activity.get('posts_read',0) }} posts read · {{ source.activity.get('posts_parsed',0) }} parsed</small>{% endif %}{% if source.get('activity',{}).get('duplicates') %}<small>{{ source.activity.duplicates }} duplicates</small>{% endif %}</td>
+    <td data-number>{{ source.jobs_stored if source.jobs_stored is not none else '—' }}</td>
+    <td>{% if source.get('issues') %}{% for issue in source.issues %}<p>{{ issue.message }}{% if issue.count > 1 %} <small>({{ issue.count }} occurrences)</small>{% endif %}</p>{% endfor %}{% elif source.get('message') %}{{ read_more(source.message,'Read source result') }}{% else %}<span class="muted">{{ 'Some readers reported problems.' if source.status == 'degraded' else 'No opportunities returned.' if source.status == 'empty' else 'Source failed; open diagnostics for details.' if source.status == 'broken' else 'Waiting for the next reader attempt.' if source.status == 'deferred' else 'Completed without a reported error.' }}</span>{% endif %}{% if source.get('activity',{}).get('coverage_partial') %}<small>Search coverage is partial.</small>{% endif %}{% if source.get('retry_at') %}<small>Next retry <time data-time datetime="{{ source.retry_at }}">{{ source.retry_at }}</time></small>{% endif %}{% if source.get('activity',{}).get('pending_extractions') %}<small>{{ source.activity.pending_extractions }} posts awaiting extraction</small>{% endif %}</td></tr>
+{% endfor %}
+</tbody></table></div>
+{% else %}{{ empty('No discovery runs yet.','Choose your sources and search preferences. Results will appear here after discovery runs.','/ui/sources?tab=preferences','Set search preferences') }}{% endif %}

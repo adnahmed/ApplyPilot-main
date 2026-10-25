@@ -1,0 +1,43 @@
+{% from 'macros.html' import status_variant %}
+{% macro activity_bubbles(value) -%}
+{% if value.get('available') and value.get('queues') %}
+<ul class="activity-bubbles" aria-label="Workers and tasks by activity">
+  {% set labels = {'preparation':'Preparation','discovery':'Discovery','research':'Research','models':'AI analysis','documents':'Documents','applications':'Applications','learning':'Learning','network':'Networking','email':'Inbox','social':'Social','reporting':'Reports','maintenance':'Upkeep','browser':'Browser','egress':'Connections'} %}
+  {% for row in value.queues %}{% set counts = (row.worker_count|string if row.worker_count is not none else 'Unknown') ~ ' workers reporting, ' ~ (row.active|string if row.active is not none else 'unknown') ~ ' tasks in progress, ' ~ (row.queued|string if row.queued is not none else 'unknown') ~ ' queued' %}<li data-state="{{ row.state }}"><a href="/ui/workers" title="{{ counts }}. {{ row.reason }}" aria-label="{{ row.label }}: {{ counts }}">
+    <span>{{ labels.get(row.role,row.label) }}</span><span class="activity-count"><strong>{{ row.active if row.active is not none else '—' }}</strong><b aria-hidden="true">/</b><strong>{{ row.queued if row.queued is not none else '—' }}</strong></span>
+  </a></li>{% endfor %}
+</ul>
+{% else %}<p class="quiet-empty">Activity counts are waiting for a current worker report.</p>{% endif %}
+{%- endmacro %}
+{% macro wait_time(seconds) -%}
+  {%- if seconds >= 3600 -%}{{ (seconds / 3600)|round(1) }} hours
+  {%- elif seconds >= 60 -%}{{ (seconds / 60)|round(1) }} minutes
+  {%- else -%}{{ seconds|round|int }} seconds{%- endif -%}
+{%- endmacro %}
+{% macro queue_status(value) -%}
+<section class="pipeline-flow" aria-label="Current work queues">
+  <div class="section-heading work-queue-heading"><h3>Current work by activity</h3>{% if value.get('captured_at') %}<span class="muted work-queue-updated">Last updated <time data-time data-time-precision="seconds" datetime="{{ value.captured_at }}">{{ value.captured_at }}</time></span>{% endif %}</div>
+  {% for warning in value.get('warnings',[]) %}<wa-callout variant="warning">{{ warning }}</wa-callout>{% endfor %}
+  {% if value.get('available') %}
+  <div class="table-wrap"><table class="table">
+    <caption class="sr-only">Current work and queued tasks</caption>
+    <thead><tr><th scope="col">Activity</th><th scope="col">In progress</th><th scope="col" title="Approximate waiting task count">Queued</th><th scope="col">Status</th></tr></thead>
+    <tbody>{% for row in value.queues %}<tr>
+      <th scope="row">{{ row.label }}</th>
+      <td>{{ row.active if row.active is not none else '—' }}</td>
+      <td>{{ row.queued if row.queued is not none else '—' }}
+        {% if row.get('queued_age_seconds') is not none and row.queued_age_seconds > 0 %}<p class="row-description">Oldest waiting: {{ wait_time(row.queued_age_seconds) }}</p>{% endif %}
+        {% if row.get('tasks_dispatch_rate') is not none %}<small>{{ (row.tasks_dispatch_rate * 60)|round(1) }} started/min</small>{% endif %}
+      </td>
+      <td><wa-badge variant="{{ status_variant(row.state) }}">{{ {'running':'In progress','queued':'Queued','idle':'Ready','unverified':'No current report','offline':'Not reporting'}.get(row.state,'Unavailable') }}</wa-badge>
+        <p class="row-description">{{ row.reason }}</p>
+        {% if row.get('worker_count') %}<small>{{ row.worker_count }} worker{{ 's' if row.worker_count != 1 else '' }} reporting{% if row.get('available_slots') is not none %} · room for {{ row.available_slots }} more task{{ 's' if row.available_slots != 1 else '' }}{% endif %}</small><br>{% endif %}
+        {% if row.get('processed_tasks') is not none %}<small>Task attempts since startup: {{ row.processed_tasks }}{% if row.get('failed_tasks') is not none %} · Failed attempts: {{ row.failed_tasks }}{% endif %}</small><br>{% endif %}
+        {% if row.get('rate_limiting_active') %}<small>Waiting for the configured processing limit.</small><br>{% endif %}
+        {% if row.reported_at %}<small>Worker report: <time data-time data-time-precision="seconds" datetime="{{ row.reported_at }}">{{ row.reported_at }}</time></small>{% endif %}
+      </td>
+    </tr>{% endfor %}</tbody>
+  </table></div>
+  {% endif %}
+</section>
+{%- endmacro %}

@@ -1,0 +1,157 @@
+# Execution mechanics, not provider quotas, submission authorization or job eligibility.
+# Override fields in <workspace>/runtime_policy.yaml. Legacy environment variables
+# are resolved once here (see runtime_policy.py), not independently by consumers.
+capacity:
+  workers: 4
+  browsers: null
+  inference: null
+  pending: null
+  recovery: null
+  dispatch_batch: 32
+  database_connections: null
+schedule:
+  poll_seconds: 0.2
+  refill_seconds: 0.05
+  scan_seconds: 1.0
+  inventory_seconds: 15.0
+  publish_seconds: 2.0
+  status_rpc_seconds: 5.0
+  status_max_age_seconds: 20.0
+  retry_seconds: 3.0
+  not_ready_seconds: 3.0
+  company_retry_seconds: 30.0
+  services:
+    admission: 60.0
+    recovery: 1.0
+    referrals: 30.0
+    company_discovery: 300.0
+    career_ops: 300.0
+buffer_mode: automatic
+buffers:
+  score: {low: 50, high: 200}
+  qualified: {low: 10, high: 40}
+  cover: {low: 3, high: 12}
+  documents: {low: 3, high: 12}
+  apply: {low: 2, high: 8}
+stages:
+  enrich:
+    outputs: [{buffer: score}]
+  score:
+    input: score
+    outputs: [{buffer: qualified}]
+  tailor:
+    input: qualified
+    outputs:
+      - {buffer: cover, when_selected: cover}
+      - {buffer: documents, when_selected: pdf}
+      - {buffer: apply, unless_selected: pdf}
+  cover:
+    input: cover
+    outputs:
+      - {buffer: documents, when_selected: pdf}
+      - {buffer: apply, unless_selected: pdf}
+  pdf:
+    input: documents
+    outputs: [{buffer: apply}]
+  brief: {}
+database:
+  connect_seconds: 5
+  pool_wait_seconds: 5.0
+  pool_idle_seconds: 10.0
+  pool_lifetime_seconds: 1800.0
+diagnostics:
+  file_bytes: 1048576
+  table_bytes: 8388608
+  total_bytes: 134217728
+  table_rows: 20000
+  files: 200
+  scanned_files: 20000
+  stack_frames: 32
+  threads: 2000
+  history_files: 32
+  selection_files: 10
+  # No query, table or whole-export wall-clock deadline.
+recovery:
+  normal: {initial_seconds: 3.0, maximum_seconds: 60.0, multiplier: 2.0}
+  verification: {initial_seconds: 900.0, maximum_seconds: 86400.0, multiplier: 2.0}
+telemetry:
+  queue_records: 4096
+  queue_bytes: 33554432
+  open_traces: 64
+
+
+# Temporal owns durable task scheduling/recovery. These are native Activity
+# attempt contracts, NOT query budgets or end-to-end workflow deadlines.
+# The old scheduler is not launched by `applypilot temporal`.
+temporal:
+  workspace: default
+  namespace: applypilot
+  queue_prefix: applypilot
+  job_phases: [enrich, company_research, score, tailor, cover, pdf, brief]
+  page_size: 32
+  pages_per_run: 8
+  discovery_pages_per_run: 32
+  evidence_observations_per_run: 32
+  workflow_tasks_per_worker: 64
+  observation_limit: 100
+  history_retention_days: 30
+  schedule_catchup_seconds: 86400
+  evidence_poll_seconds: 60
+  # Refresh evidence older than this horizon; Temporal owns the scan clock.
+  source_refresh_age_seconds: 86400
+  activity_retry_initial_seconds: 1
+  activity_retry_maximum_seconds: 30
+  linkedin_applications:
+    account_id: primary
+    spacing_seconds: 600
+    hourly_limit: 4
+    daily_limit: 20
+    restriction_retry_seconds: 86400
+  workers:
+    workflow: {activities: 1, shutdown_seconds: 60}
+    research: {activities: 4, shutdown_seconds: 120}
+    models: {activities: 4, shutdown_seconds: 120}
+    preparation: {activities: 4, shutdown_seconds: 120}
+    discovery: {activities: 4, shutdown_seconds: 120}
+    documents: {activities: 2, shutdown_seconds: 120}
+    applications: {activities: 1, shutdown_seconds: 300}
+    learning: {activities: 1, shutdown_seconds: 300}
+    network: {activities: 1, shutdown_seconds: 300}
+    browser: {activities: 1, shutdown_seconds: 300}
+    social: {activities: 1, shutdown_seconds: 300}
+    reporting: {activities: 2, shutdown_seconds: 120}
+    egress: {activities: 2, shutdown_seconds: 120}
+    email: {activities: 4, shutdown_seconds: 120}
+    maintenance: {activities: 2, shutdown_seconds: 120}
+  activities:
+    research: {start_to_close_seconds: 600, heartbeat_seconds: 90, heartbeat_interval_seconds: 15}
+    models: {start_to_close_seconds: 3600, heartbeat_seconds: 90, heartbeat_interval_seconds: 15}
+    preparation: {start_to_close_seconds: 3600, heartbeat_seconds: 90, heartbeat_interval_seconds: 15}
+    discovery: {start_to_close_seconds: 900, heartbeat_seconds: 90, heartbeat_interval_seconds: 15}
+    documents: {start_to_close_seconds: 900, heartbeat_seconds: 90, heartbeat_interval_seconds: 15}
+    applications: {start_to_close_seconds: 7200, heartbeat_seconds: 120, heartbeat_interval_seconds: 15}
+    learning: {start_to_close_seconds: 86400, heartbeat_seconds: 120, heartbeat_interval_seconds: 15}
+    network: {start_to_close_seconds: 3600, heartbeat_seconds: 120, heartbeat_interval_seconds: 15}
+    browser: {start_to_close_seconds: 3600, heartbeat_seconds: 120, heartbeat_interval_seconds: 15}
+    social: {start_to_close_seconds: 3600, heartbeat_seconds: 120, heartbeat_interval_seconds: 15}
+    reporting: {start_to_close_seconds: 3600, heartbeat_seconds: 120, heartbeat_interval_seconds: 15}
+    egress: {start_to_close_seconds: 900, heartbeat_seconds: 90, heartbeat_interval_seconds: 15}
+    email: {start_to_close_seconds: 900, heartbeat_seconds: 90, heartbeat_interval_seconds: 15}
+    maintenance: {start_to_close_seconds: 21600, heartbeat_seconds: 90, heartbeat_interval_seconds: 15}
+  schedules:
+    jobs: {every_seconds: 30}
+    discover: {every_seconds: 3600}
+    admission: {every_seconds: 60}
+    referrals: {every_seconds: 60}
+    tracking: {every_seconds: 120}
+    network_prepare: {every_seconds: 60}
+    network_research: {every_seconds: 60}
+    network_delivery: {every_seconds: 120}
+    company_discovery: {every_seconds: 86400}
+    career_ops: {every_seconds: 300}
+    learning: {every_seconds: 300}
+    backup: {every_seconds: 300}
+    backup_full: {every_seconds: 21600}
+    source_refresh: {every_seconds: 86400}
+    email_warmup: {every_seconds: 21600, enabled: false}
+    social: {every_seconds: 3600, enabled: false}

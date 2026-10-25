@@ -1,0 +1,9 @@
+{
+  "employer_id": "example-company",
+  "contact_key": "[One stable private contact identifier]",
+  "source": "[Public professional source or permission-based introduction]",
+  "purpose": "informational",
+  "sent_at": "[Actual sent time with timezone, for example 2026-09-22T09:00:00+05:00]",
+  "message_note": "[What you actually sent and why it was relevant; not a fabricated conversation]",
+  "opt_out": false
+}

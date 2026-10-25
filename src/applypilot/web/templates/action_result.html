@@ -1,0 +1,16 @@
+{% from 'macros.html' import status_variant %}
+{% from 'source_checks.html' import source_checks %}
+{% set pending = result.get('state') in ['building','queued','running'] %}
+<div class="action-result" data-profile-changed="{{ 'true' if result.get('profile_changed') else 'false' }}" data-state="{{ result.get('state','') }}" data-complete="{{ 'true' if not pending and progress_url|default('') else 'false' }}" role="status" aria-live="polite" {% if progress_url|default('') and pending %}hx-get="{{ progress_url }}" hx-trigger="load delay:2s" hx-target="this" hx-select="unset" hx-swap="outerHTML" hx-disabled-elt="this"{% endif %}>
+{% if result.get('title') %}<div class="section-heading"><strong>{{ result.title }}</strong>{% if result.get('status_label') %}<wa-badge variant="{{ status_variant(result.get('state','')) }}">{{ result.status_label }}</wa-badge>{% endif %}</div>{% endif %}
+{% if pending %}<div class="action-result-progress"><wa-spinner aria-hidden="true"></wa-spinner><span>{{ result.get('message') or ('Waiting for a worker…' if result.get('state') == 'queued' else 'Working…') }}</span></div>
+{% elif result.get('error') %}<p class="error">{{ result.error }}</p>
+{% elif result.get('message') %}<p>{{ result.message }}</p>
+{% elif result.get('state') in ['failed','error'] %}<p class="error">{{ result.get('reason') or result.get('detail') or 'The worker stopped without recording a failure reason.' }}</p>
+{% else %}<p>{{ 'Completed.' if result.get('state') in ['completed','complete','success'] else 'Changes saved.' }}</p>{% endif %}
+{% if result.get('checks') %}{{ source_checks(result.checks.values() if result.checks is mapping else result.checks) }}{% endif %}
+{% if result.get('id') or result.get('task_id') %}<p><a href="/ui/activity">View in Activity</a></p>{% endif %}
+{% if result.get('auth_url') %}<p><wa-button href="{{ result.auth_url }}" target="_blank" rel="noopener noreferrer" hx-boost="false" variant="brand" appearance="accent">Continue account sign-in</wa-button>{% if result.get('device_code') %} <span>Enter code <strong>{{ result.device_code }}</strong></span>{% endif %}</p>{% endif %}
+{% if result.get('download_url') %}<p><wa-button href="{{ result.download_url }}" hx-boost="false" variant="brand" appearance="accent">{{ result.get('download_label') or 'Download export' }}</wa-button>{% if result.get('bytes') %} <span class="muted">{{ result.bytes|filesizeformat(true) }}</span>{% endif %}</p>{% endif %}
+{% if not pending and (result.get('details') or result.get('error_details')) %}<div data-error-record><template data-activity-record>{{ {'title':result.get('title','Task details'),'state':result.get('state'),'message':result.get('error') or result.get('message'),'details':result.get('details') or result.get('error_details')}|tojson }}</template><wa-button type="button" data-open-activity variant="neutral" appearance="outlined" size="s">View diagnostic details</wa-button></div>{% endif %}
+</div>

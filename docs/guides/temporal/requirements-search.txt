@@ -1,0 +1,9 @@
+# Small search-only image. Not the dependencies for applications, DSPy or browsers.
+# Direct versions checked against published metadata; installation was not executable
+# in the delivery environment. This is NOT a resolved, hash-locked dependency set.
+-r requirements-control.txt
+httpx==0.28.1
+ddgs==9.5.5
+psycopg[binary]==3.2.12
+psycopg-pool==3.2.7
+psutil>=7.0,<8

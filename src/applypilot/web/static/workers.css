@@ -1,0 +1,548 @@
+/* Worker evidence without another vertically stacked control room. */
+.workers-view {
+    min-width: 0;
+    font-size: 14px
+}
+
+.workers-view>[data-health],
+.workers-view>[data-stages] {
+    margin-bottom: 20px
+}
+
+.workers-view>details.card {
+    margin-bottom: 12px
+}
+
+.workers-view>details.card>summary {
+    min-height: 44px;
+    padding: 12px 18px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 13px
+}
+
+.workers-view>details.card>div {
+    padding: 0 18px 18px
+}
+
+.workers-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    gap: 24px;
+    margin: 0 0 18px
+}
+
+.workers-heading h2 {
+    font-size: 22px;
+    margin-bottom: 8px
+}
+
+.workers-heading p {
+    max-width: 620px;
+    line-height: 1.6
+}
+
+.workers-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap
+}
+
+.workers-actions .btn {
+    min-height: 44px
+}
+
+.workers-health {
+    padding: 12px 16px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--surface);
+    line-height: 1.6;
+    margin-bottom: 18px
+}
+
+.workers-warning {
+    border-left: 4px solid var(--orange)
+}
+
+.workers-metrics {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 22px
+}
+
+.workers-metrics>div {
+    padding: 15px 18px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--surface)
+}
+
+.workers-metrics span {
+    display: block;
+    color: var(--muted);
+    font-size: 13px
+}
+
+.workers-metrics strong {
+    font-size: 27px;
+    line-height: 1.5;
+    font-variant-numeric: tabular-nums
+}
+
+.workers-metrics small {
+    display: block;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.5
+}
+
+.workers-filters {
+    display: flex;
+    gap: 16px;
+    align-items: end;
+    flex-wrap: wrap;
+    margin-bottom: 16px
+}
+
+.workers-view label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 13px
+}
+
+.workers-view select,
+.workers-view input {
+    width: auto;
+    max-width: 100%;
+    min-height: 44px;
+    padding: 8px 12px;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    background: var(--surface);
+    color: var(--ink);
+    font-size: 14px
+}
+
+.workers-search {
+    flex: 1;
+    min-width: 180px
+}
+
+.workers-caption {
+    padding: 14px 18px;
+    font-size: 12px;
+    border-bottom: 1px solid var(--line)
+}
+
+.workers-table-scroll {
+    overflow-x: auto
+}
+
+.workers-table {
+    border-collapse: collapse;
+    table-layout: fixed;
+    width: 100%;
+    min-width: 680px
+}
+
+.workers-table thead th {
+    font-size: 12px;
+    text-align: left;
+    font-weight: 600;
+    background: var(--surface-sub);
+    color: var(--muted)
+}
+
+.workers-table th,
+.workers-table td {
+    padding: 15px 18px;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+    white-space: normal;
+    overflow-wrap: anywhere
+}
+
+.workers-table th:nth-child(1) {
+    width: 23%
+}
+
+.workers-table th:nth-child(2) {
+    width: 39%
+}
+
+.workers-table th:nth-child(3) {
+    width: 20%
+}
+
+.workers-table th:nth-child(4) {
+    width: 18%
+}
+
+.workers-table tbody th {
+    font-weight: 500
+}
+
+.workers-table td>strong {
+    font-weight: 550
+}
+
+.workers-table small {
+    display: block;
+    margin-top: 5px;
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 400
+}
+
+.workers-table tr:last-child>* {
+    border-bottom: 0
+}
+
+.workers-table tr:hover {
+    background: var(--surface-sub)
+}
+
+.worker-open {
+    background: transparent;
+    border: 0;
+    min-height: 44px;
+    padding: 0;
+    text-align: left;
+    color: var(--green-dark);
+    font-size: 14px;
+    font-weight: 650;
+    line-height: 1.5
+}
+
+.worker-open:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px
+}
+
+.worker-state {
+    display: inline-block;
+    font-size: 12px;
+    padding: 3px 9px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--surface-sub);
+    font-weight: 650;
+    white-space: normal
+}
+
+.worker-state-running {
+    background: var(--green-pale);
+    color: var(--green-dark)
+}
+
+.worker-state-waiting_provider,
+.worker-state-waiting {
+    background: var(--blue-pale);
+    color: var(--ink)
+}
+
+.worker-state-blocked,
+.worker-state-unverified {
+    background: var(--orange-pale);
+    color: var(--ink);
+    border-color: var(--orange)
+}
+
+.workers-table .worker-issue {
+    color: var(--red)
+}
+
+.workers-empty {
+    padding: 28px !important;
+    line-height: 1.7
+}
+
+.workers-pagination {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    margin: 18px 0
+}
+
+.workers-pagination label {
+    margin-right: auto;
+    flex-direction: row;
+    align-items: center
+}
+
+.workers-footnote {
+    font-size: 12px;
+    line-height: 1.8;
+    color: var(--muted);
+    max-width: 1000px
+}
+
+.workers-pagination .btn {
+    min-height: 44px
+}
+
+.worker-inspector {
+    background: var(--surface);
+    color: var(--ink);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    width: min(740px, calc(100vw - 24px));
+    max-height: calc(100dvh - 32px);
+    padding: 0;
+    box-shadow: 0 20px 70px #0005
+}
+
+.worker-inspector::backdrop {
+    background: #101d18a8
+}
+
+.worker-inspector header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--line);
+    position: sticky;
+    top: 0;
+    background: var(--surface)
+}
+
+.worker-inspector header h2 {
+    font-size: 21px
+}
+
+.worker-inspector [data-details] {
+    padding: 22px 24px
+}
+
+.worker-inspector-title {
+    display: flex;
+    gap: 12px;
+    margin: 18px 0;
+    align-items: center;
+    flex-wrap: wrap
+}
+
+.worker-inspector dl {
+    display: grid;
+    grid-template-columns: 160px minmax(0, 1fr);
+    gap: 12px 16px;
+    margin: 20px 0
+}
+
+.worker-inspector dt {
+    font-weight: 600
+}
+
+.worker-inspector dd {
+    margin: 0;
+    overflow-wrap: anywhere
+}
+
+.worker-inspector details {
+    margin-top: 20px
+}
+
+.worker-inspector summary {
+    cursor: pointer;
+    min-height: 36px
+}
+
+.worker-inspector pre {
+    font-size: 12px;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    max-height: 350px;
+    overflow: auto;
+    padding: 14px;
+    background: var(--surface-sub);
+    border-radius: 8px
+}
+
+.workers-view :is(button, input, select, summary, a):focus-visible {
+    outline: 3px solid var(--blue);
+    outline-offset: 3px
+}
+
+@media(max-width:1100px) {
+    .workers-heading {
+        flex-direction: column;
+        gap: 14px
+    }
+
+    .workers-table th,
+    .workers-table td {
+        padding: 12px
+    }
+
+    .workers-metrics>div {
+        padding: 12px
+    }
+}
+
+@media(max-width:680px) {
+    .workers-metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px
+    }
+
+    .workers-metrics strong {
+        font-size: 23px
+    }
+
+    .workers-metrics span {
+        font-size: 12px
+    }
+
+    .workers-actions {
+        width: 100%
+    }
+
+    .workers-actions .btn {
+        flex: 1 1 140px
+    }
+
+    .workers-filters>label {
+        flex: 1 1 140px
+    }
+
+    .workers-filters .workers-search {
+        flex-basis: 100%
+    }
+
+    .workers-table thead {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%)
+    }
+
+    .workers-table {
+        min-width: 0
+    }
+
+    .workers-table,
+    .workers-table tbody,
+    .workers-table tr,
+    .workers-table tbody th,
+    .workers-table td {
+        display: block;
+        width: 100% !important
+    }
+
+    .workers-table tr {
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--line)
+    }
+
+    .workers-table tr:last-child {
+        border-bottom: 0
+    }
+
+    .workers-table tbody th,
+    .workers-table td {
+        padding: 3px 0;
+        border: 0
+    }
+
+    .workers-table td:nth-child(3) {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-top: 6px
+    }
+
+    .workers-table td:nth-child(4) {
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px solid var(--line);
+        font-size: 12px
+    }
+
+    .workers-table td:nth-child(3) small {
+        margin: 0
+    }
+
+    .workers-table tbody th small {
+        display: inline;
+        margin-left: 10px
+    }
+
+    .workers-caption {
+        padding: 12px 16px
+    }
+
+    .workers-pagination label {
+        width: 100%;
+        margin-bottom: 2px
+    }
+
+    .workers-pagination {
+        justify-content: space-between;
+        gap: 8px
+    }
+
+    .worker-inspector [data-details],
+    .worker-inspector header {
+        padding: 18px
+    }
+
+    .worker-inspector dl {
+        grid-template-columns: 1fr;
+        gap: 5px
+    }
+
+    .worker-inspector dd {
+        margin-bottom: 9px
+    }
+
+    .worker-inspector header h2 {
+        font-size: 19px
+    }
+}
+
+@media(prefers-reduced-motion:reduce) {
+    .workers-view * {
+        animation: none !important;
+        transition: none !important;
+        scroll-behavior: auto !important
+    }
+}
+
+
+.workers-capacity-details {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+    margin: 18px 0
+}
+
+.workers-capacity-details dt {
+    font-size: 12px;
+    color: var(--muted)
+}
+
+.workers-capacity-details dd {
+    margin: 4px 0 0;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums
+}
+
+@media(max-width:800px) {
+    .workers-metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr))
+    }
+
+    .workers-capacity-details {
+        grid-template-columns: repeat(2, minmax(0, 1fr))
+    }
+}

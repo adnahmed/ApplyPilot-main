@@ -1,0 +1,64 @@
+{% from 'macros.html' import status_variant %}
+{% from 'macros.html' import icon %}
+{% from 'source_checks.html' import source_checks %}
+{% macro connection_action(component, route, form_id, payload, label, pending, fields={}) -%}
+<form class="inline-form connection-form" method="post" action="/ui/actions/{{ route }}"
+      hx-post="/ui/actions/{{ route }}" hx-target="#connection-result-{{ component }}"
+      hx-select=".action-result" hx-swap="innerHTML" hx-sync="closest .connection-entry:drop" hx-disabled-elt="find wa-button">
+  <input type="hidden" name="_view" value="connections">
+  <input type="hidden" name="_form" value="{{ form_id }}">
+  <input type="hidden" name="_payload" value="{{ payload|tojson|forceescape }}">
+  {% for name, field_value in fields.items() %}<input type="hidden" name="{{ name }}" value="{{ field_value }}">{% endfor %}
+  <wa-button type="submit" data-pending-label="{{ pending }}" aria-label="{{ label }} {{ component|label }}" variant="neutral" appearance="outlined" size="s">{{ label }}</wa-button>
+  <span data-errors role="alert"></span>
+</form>
+{%- endmacro %}
+
+<div class="connections-list">
+{% for item in connection_statuses|default(value.get('connection_statuses',[])) %}
+  {% set component = item.get('component',item.get('key','')) %}
+  {% set connection_title = item.get('label') or item.get('title') or component|label %}
+  <section id="connection-{{ component }}" class="connection-entry" data-connection="{{ component }}" aria-labelledby="connection-title-{{ component }}">
+    <div class="connection-row">
+      <span class="connection-symbol">{{ icon(component) }}</span>
+      <div class="connection-description">
+        <h3 id="connection-title-{{ component }}">{{ connection_title }}</h3>
+        <p>{{ item.get('message','') }}</p>
+        {% if component in ['linkedin','x'] %}<p class="muted">{{ 'Reconnect' if item.get('session_saved') else 'Connect' }} opens a sign-in browser on this computer. Complete any account challenge there, then return and check access.{{ ' One LinkedIn sign-in saves sessions for both readers.' if component == 'linkedin' else '' }}</p>{% endif %}
+        {% if item.get('checked_at') %}<small>{{ 'Saved' if item.get('status_label') == 'Session saved' else 'Checked' }} <time data-time datetime="{{ item.checked_at }}">{{ item.checked_at }}</time></small>{% endif %}
+      </div>
+      <wa-badge variant="{{ status_variant(item.get('state','unchecked')) }}">{{ item.get('status_label') or item.get('state','unchecked')|label }}</wa-badge>
+      {% if not read_only %}
+      <div class="connection-actions">
+        {% if component in ['linkedin','x'] %}
+          {% set provider = item.get('provider') or ('linkedin_scraper' if component == 'linkedin' else 'twikit') %}
+          {{ connection_action(component, 'setup/task/social_connect', 'connect-' + provider,
+             {'provider':provider,'browser_backend':'cloakbrowser','consent':true},
+             item.get('connect_label','Connect'), 'Connecting…', {'reconnect':'true' if item.get('session_saved') else 'false'}) }}
+        {% elif component == 'gmail' %}
+          {{ connection_action(component, 'setup/task/gmail_connect', 'gmail', {'consent':true},
+             'Reconnect' if item.get('state') in ['connected','configured','needs_attention'] else 'Connect',
+             'Connecting…', {'email':value.get('gmail',{}).get('mailbox','')}) }}
+        {% elif component == 'github' %}
+          {{ connection_action(component, 'setup/task/github_connect', 'github', {'consent':true},
+             'Reconnect' if item.get('state') == 'connected' else 'Connect',
+             'Connecting…', {'reconnect':'true' if item.get('state') == 'connected' else 'false'}) }}
+        {% elif component != 'sources' and item.get('action_href') %}
+          <wa-button href="{{ '/ui/settings?section=connections#form-connections-core-connections' if component in ['llm','browseros'] else item.action_href }}" variant="neutral" appearance="outlined" size="s">Configure</wa-button>
+        {% endif %}
+        {% if component in ['llm','gmail','sources','browseros','github','linkedin','x'] %}
+          {{ connection_action(component, 'setup/task/verify', 'verify-' + component, {'component':component}, 'Check', 'Checking…') }}
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+    <div id="connection-result-{{ component }}" class="connection-result" aria-live="polite" hx-preserve>
+      {% if item.get('checks') %}
+      {{ source_checks(item.checks) }}
+      {% endif %}
+    </div>
+  </section>
+{% else %}
+  <p class="quiet-empty">Saved accounts and their latest connection checks appear here.</p>
+{% endfor %}
+</div>

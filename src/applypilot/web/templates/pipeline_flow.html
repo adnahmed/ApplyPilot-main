@@ -1,0 +1,54 @@
+{% from 'macros.html' import status_variant %}
+{% from 'automation_work.html' import queue_status %}
+{% macro number(value) -%}{% if value is number %}<span data-number>{{ value }}</span>{% else %}—{% endif %}{%- endmacro %}
+{% macro pipeline_flow(flow) -%}
+{% if flow.get('native') %}{{ queue_status(flow) }}{% else %}
+<section class="pipeline-flow" aria-label="Pipeline buffers and downstream readiness">
+  <div class="section-heading"><h3>Queue &amp; next steps</h3><a href="/ui/settings?section=automation#form-queue">Queue settings</a></div>
+  <p class="pipeline-freshness" role="status">{{ flow.get('note','Waiting for a preparation report.') }}{% if flow.get('at') %} <time data-time datetime="{{ flow.at }}">{{ flow.at }}</time>{% endif %}</p>
+  {% for issue in flow.get('issues',[]) %}<wa-callout variant="warning">{{ issue }}</wa-callout>{% endfor %}
+  <div class="pipeline-buffers">
+  {% for buffer in flow.get('buffers',[]) %}
+    <article class="pipeline-buffer">
+      <h4>{{ buffer.label }}</h4>
+      <p class="pipeline-buffer-status">{{ buffer.producer }}: <strong>{{ buffer.status|lower }}</strong>{% if not flow.current %} at last report{% endif %}</p>
+      <div class="pipeline-occupancy"><strong>{{ number(buffer.occupancy) }}</strong><span>{% if buffer.mode == 'automatic' %} saved or scheduled{% else %} / {{ number(buffer.high) }} occupied{% endif %}</span></div>
+      {% if buffer.fill_percent is number %}<div class="pipeline-meter" aria-hidden="true"><span style="width:{{ buffer.fill_percent }}%"></span>{% if buffer.resume_percent is number %}<i style="left:{{ buffer.resume_percent }}%"></i>{% endif %}</div>{% endif %}
+      {% if buffer.mode == 'automatic' %}<p class="pipeline-watermarks">Automatic · no queue watermark</p>{% else %}<p class="pipeline-watermarks">Resume at ≤ {{ number(buffer.low) }} <span>Pause at ≥ {{ number(buffer.high) }}</span></p>{% endif %}
+      <dl class="pipeline-stock">
+        <div><dt>Saved</dt><dd>{{ number(buffer.stock) }}</dd></div>
+        <div><dt>Reserved output</dt><dd>{{ number(buffer.reserved) }}</dd></div>
+        <div><dt>Ready for next stage</dt><dd>{{ number(buffer.ready) }}</dd></div>
+      </dl>
+      {% if buffer.drain is number %}<p class="row-description">Waiting for {{ number(buffer.drain) }} items to move forward.</p>{% endif %}
+      {% if not buffer.available and buffer.reason %}<p class="row-description">{{ buffer.reason }}</p>{% endif %}
+      {% if buffer.deferred %}<small>{{ number(buffer.deferred) }} waiting to retry.</small>{% endif %}
+      {% if buffer.held_stock %}<small>{{ number(buffer.held_stock) }} on hold; other jobs can continue.</small>{% endif %}
+      {% if buffer.route_blocked %}<small>{{ number(buffer.route_blocked) }} need application route repair.</small>{% endif %}
+      {% if buffer.blockers %}<ul class="pipeline-blockers">{% for blocker in buffer.blockers %}<li>{{ number(blocker.count) }} {{ blocker.label }}</li>{% endfor %}</ul>{% endif %}
+      <p class="pipeline-next"><strong>{{ buffer.consumer }}</strong><span>{{ buffer.next }}</span></p>
+      {% if buffer.retry_at %}<small>Next recorded retry: <time data-time datetime="{{ buffer.retry_at }}">{{ buffer.retry_at }}</time></small>{% endif %}
+    </article>
+  {% endfor %}
+  </div>
+  <details class="pipeline-stages-detail" data-disclosure-key="pipeline-stages"><summary>Why each stage is running or waiting</summary>
+    <div class="table-wrap" tabindex="0" role="region" aria-label="Pipeline stage details"><table class="table">
+      <caption class="sr-only">{{ 'Current' if flow.get('current') else 'Last recorded' }} pipeline stage status</caption>
+      <thead><tr><th scope="col">Stage</th><th scope="col">Status &amp; reason</th><th scope="col">Tasks &amp; timing</th></tr></thead>
+      <tbody>{% for stage in flow.get('stages',[]) %}<tr>
+        <th scope="row">{{ stage.label }}</th>
+        <td><wa-badge variant="{{ status_variant(stage.state if flow.current else 'neutral') }}">{{ stage.status }}</wa-badge><p class="row-description">{{ stage.reason or 'No stage reason has been reported.' }}</p>
+          {% if stage.last_result %}<small>Last outcome: {{ stage.last_result }}</small>{% endif %}</td>
+        <td><small>{{ number(stage.active_tasks) }} active · {{ number(stage.waiting_ai) }} waiting for AI · {{ number(stage.queued_tasks) }} queued</small>
+          {% if stage.ready_backlog is number %}<small>{{ number(stage.ready_backlog) }} eligible inputs{% if stage.deferred_backlog %}; {{ number(stage.deferred_backlog) }} deferred{% endif %}</small>{% endif %}
+          {% if stage.oldest_queue_seconds %}<small>Oldest queued task: {{ number(stage.oldest_queue_seconds|round|int) }} seconds</small>{% endif %}
+          {% if stage.runtime_seconds_median %}<small>Typical task duration: {{ number(stage.runtime_seconds_median|round|int) }} seconds</small>{% endif %}
+          {% if stage.last_result_at %}<small>Last finished task: <time data-time datetime="{{ stage.last_result_at }}">{{ stage.last_result_at }}</time></small>{% endif %}
+          {% if stage.retry_at %}<small>Retry scheduled: <time data-time datetime="{{ stage.retry_at }}">{{ stage.retry_at }}</time></small>{% endif %}
+        </td>
+      </tr>{% endfor %}</tbody>
+    </table></div>
+  </details>
+</section>
+{% endif %}
+{%- endmacro %}

@@ -1,0 +1,91 @@
+{% from 'form.html' import control %}
+{% from 'components.html' import read_more %}
+{% set item = value.get('item', {}) %}
+{% if kind == 'evidence' %}
+<h2>{{ item.get('title') or 'Project evidence' }}</h2>
+<p class="section-note">Describe your contribution and choose the statements applications may use. Sources and previous versions stay attached.</p>
+<form class="detail-editor" method="post" action="/ui/actions/setup/evidence/edit" hx-post="/ui/actions/setup/evidence/edit" hx-target="this" hx-select="unset" hx-swap="outerHTML" hx-disabled-elt="find wa-button[type='submit']" hx-indicator="find .htmx-indicator" hx-sync="this:drop">
+  <input type="hidden" name="_payload" value="{{ {'id': value.id, 'revision': value.revision}|tojson|forceescape }}">
+  <input type="hidden" name="_view" value="evidence">
+  <input type="hidden" name="claim_count" value="{{ value.claims|length }}">
+  <fieldset {% if read_only %}disabled{% endif %}>
+    <section class="editor-section" aria-label="Project contribution">
+      <div class="form-fields">
+        {{ control(dict(name='title', label='Project name', kind='text', value=item.get('title', ''), maxlength=1200, required=true)) }}
+        {{ control(dict(name='scope', label='Your contribution', kind='textarea', value=item.get('scope') or 'Project contribution', rows=4, maxlength=1200, required=true)) }}
+        {{ control(dict(name='resume_eligible', label='Use this project in future applications', kind='bool', value=item.get('resume_eligible', false))) }}
+      </div>
+    </section>
+    {% for claim in value.claims %}
+    <section class="editor-section" aria-labelledby="evidence-statement-{{ loop.index0 }}">
+      <h3 id="evidence-statement-{{ loop.index0 }}">Statement {{ loop.index }}</h3>
+      <input type="hidden" name="claim-{{ loop.index0 }}-id" value="{{ claim.id }}">
+      <div class="form-fields">
+        {{ control(dict(name='claim-' ~ loop.index0 ~ '-text', label='Supported statement', kind='textarea', value=claim.get('allowed_resume_claim') or claim.get('capability') or '', rows=4, minlength=10, maxlength=1500, required=true)) }}
+        {{ control(dict(name='claim-' ~ loop.index0 ~ '-eligible', label='I confirm this statement may be used', kind='bool', value=claim.get('resume_eligible', false))) }}
+      </div>
+      {% if claim.get('path') %}<p class="field-help">Source: {{ claim.path }}</p>{% endif %}
+      {% if claim.get('excerpt') %}{{ read_more(claim.excerpt, 'Read supporting source') }}{% endif %}
+    </section>
+    {% endfor %}
+    <div data-errors role="alert"></div>
+    <div class="form-footer"><wa-button type="submit" variant="brand">Save evidence</wa-button><span class="htmx-indicator">Saving…</span></div>
+  </fieldset>
+</form>
+{% else %}
+<h2>{{ 'Your achievement note' if value.kind == 'note' else item.get('problem') or 'Recorded achievement' }}</h2>
+<p class="section-note">Keep the situation, your contribution, and the result together.</p>
+<form class="detail-editor" method="post" action="/ui/actions/diary/edit" hx-post="/ui/actions/diary/edit" hx-target="this" hx-select="unset" hx-swap="outerHTML" hx-disabled-elt="find wa-button[type='submit']" hx-indicator="find .htmx-indicator" hx-sync="this:drop">
+  <input type="hidden" name="_payload" value="{{ {'kind': value.kind, 'id': value.id, 'revision': value.revision}|tojson|forceescape }}">
+  <input type="hidden" name="_view" value="evidence">
+  <input type="hidden" name="_editor" value="accomplishment">
+  <fieldset {% if read_only %}disabled{% endif %}>
+    {% if value.kind == 'note' %}
+    <section class="editor-section" aria-label="Achievement note"><div class="form-fields">
+      {{ control(dict(name='note', label='What you did and what changed', kind='textarea', value=item.get('note', ''), rows=8, maxlength=16000, required=true)) }}
+    </div></section>
+    {% else %}
+    {% set intervention = item.get('intervention') or {} %}
+    {% set scope = item.get('scope') or {} %}
+    <section class="editor-section" aria-label="Your contribution"><div class="form-fields">
+      {{ control(dict(name='project', label='Project or context', kind='text', value=scope.get('project', ''))) }}
+      {{ control(dict(name='problem', label='Situation or problem', kind='textarea', value=item.get('problem', ''), rows=3)) }}
+      {{ control(dict(name='contribution', label='What you did', kind='textarea', value=intervention.get('summary') or intervention.get('description') or '', rows=5)) }}
+    </div></section>
+    {% for measurement in item.get('measurements', []) %}
+    {% set number = loop.index0 %}
+    <section class="editor-section" aria-labelledby="achievement-measurement-{{ number }}">
+      <h3 id="achievement-measurement-{{ number }}">{{ measurement.get('name') or 'Measured result ' ~ loop.index }}</h3>
+      <div class="form-fields">
+        {{ control(dict(name='measurement-' ~ number ~ '-claim', label='What improved', kind='textarea', value=measurement.get('claim') or '', rows=3, maxlength=2000)) }}
+        {{ control(dict(name='measurement-' ~ number ~ '-quantity_text', label='Result in your words', kind='text', value=measurement.get('quantity_text') or '', maxlength=2000)) }}
+        {{ control(dict(name='measurement-' ~ number ~ '-unit', label='Unit', kind='text', value=measurement.get('unit') or '', maxlength=2000)) }}
+        {% set numeric_fields = [('value_min', 'From'), ('value_max', 'To')] if measurement.get('value_qualifier') == 'range' else [('delta_percent', 'Percentage change')] if measurement.get('representation') == 'percent_change' else [('value', 'Result value')] %}
+        {% for key, label in numeric_fields %}
+          {{ control(dict(name='measurement-' ~ number ~ '-' ~ key, label=label, kind='number', value=measurement.get(key) if measurement.get(key) is not none else '', step='any')) }}
+        {% endfor %}
+        {% if measurement.get('representation') == 'baseline_to_result' %}
+          {% for key, label in [('baseline', 'Before'), ('result', 'After')] %}
+            {{ control(dict(name='measurement-' ~ number ~ '-' ~ key, label=label, kind='text', value=measurement.get(key) if measurement.get(key) is not none else '', maxlength=2000)) }}
+          {% endfor %}
+        {% endif %}
+      </div>
+      {% if measurement.get('source_ref') %}<p class="field-help">Source: {{ measurement.source_ref }}</p>{% endif %}
+    </section>
+    {% endfor %}
+    {% if item.get('outcomes') %}
+    <section class="editor-section" aria-label="Outcomes"><h3>Outcomes</h3><div class="form-fields">
+      {% for outcome in item.get('outcomes', []) %}
+        {{ control(dict(name='outcome-' ~ loop.index0, label='Outcome ' ~ loop.index, kind='textarea', value=outcome.get('claim') or outcome.get('description') or '', rows=3, maxlength=2000)) }}
+      {% endfor %}
+    </div></section>
+    {% endif %}
+    <section class="editor-section" aria-label="Application use"><div class="form-fields">
+      {{ control(dict(name='owner_reviewed', label='I have reviewed these changes; use this achievement in applications', kind='bool', value=false)) }}
+    </div></section>
+    {% endif %}
+    <div data-errors role="alert"></div>
+    <div class="form-footer"><wa-button type="submit" variant="brand">Save accomplishment</wa-button><span class="htmx-indicator">Saving…</span></div>
+  </fieldset>
+</form>
+{% endif %}

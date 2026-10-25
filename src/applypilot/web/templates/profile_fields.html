@@ -1,0 +1,5 @@
+<div class="forms-grid" aria-label="Edit profile">
+{% include 'profile_completion.html' %}
+{% for error in errors %}<p class="notice error" role="alert">{{ error }}</p>{% endfor %}
+{% for form in forms %}{% include 'form.html' %}{% endfor %}
+</div>

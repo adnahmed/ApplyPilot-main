@@ -1,0 +1,88 @@
+{% from 'macros.html' import icon %}
+{% from 'components.html' import tabs %}
+<!doctype html>
+<html lang="en" hx-history="false" class="wa-theme-default wa-size-s">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light dark"><meta name="theme-color" content="#f3f6fa"><meta name="ap-csrf" content="{{ csrf }}">
+  <meta name="htmx-config" content='{"allowEval":false,"allowScriptTags":false,"historyCacheSize":0,"selfRequestsOnly":true,"includeIndicatorStyles":false,"scrollIntoViewOnBoost":false}'>
+  <title>{{ title }} · ApplyPilot</title><link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="/static/dm-sans-latin-variable.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/static/manrope-latin-variable.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/static/fonts.css">
+  <script src="/static/theme.js"></script><link rel="stylesheet" href="/static/webawesome.css"><link rel="stylesheet" href="/static/dashboard.css">
+  <script src="/static/htmx-2.0.11.min.js" defer></script><script src="/static/dashboard.js" type="module"></script>
+</head>
+<body><a class="skip-link" href="#main">Skip to content</a>
+<div id="workspace" data-view="{{ view }}" hx-boost="true" hx-target="#workspace" hx-select="#workspace" hx-swap="outerHTML">
+  <aside class="sidebar">
+    <a class="brand" href="/ui/overview"><span class="brand-mark" aria-hidden="true">{{ icon('plane') }}</span><span>ApplyPilot<small>Your next move.</small></span></a>
+    <nav aria-label="Main navigation">
+      {% for key,label in nav %}
+      <a href="/ui/{{ key }}" {% if key == view %}aria-current="page"{% endif %}>{{ icon(key) }}<span>{{ label }}</span></a>
+      {% endfor %}
+    </nav>
+    <div class="sidebar-footer">{{ icon('lock') }}<span>Local workspace<small>Your data stays yours.</small></span></div>
+  </aside>
+  <main id="main" tabindex="-1">
+    <header class="page-header"><div><h1>{{ title }}</h1><p class="page-description">{{ {'overview':'Your search, at a glance.','jobs':'Find the right role. See what happens next.','sources':'Choose where to look and who to reach.','outreach':'People, conversations, and your next connection.','outcomes':'See what your search is producing.','profile':'The facts that shape every application.','evidence':'What you built, what changed, and the sources behind it.','activity':'What happened, why it matters, and what needs you.','workers':'What is running and what it is waiting for.','settings':'Connections, preferences, and workspace controls.'}.get(view,'') }}</p></div><div class="header-actions"><span class="live-status" data-stream-status role="status">Connecting…</span><wa-button class="theme-toggle" appearance="plain" type="button" data-theme-toggle aria-label="Switch color theme" title="Switch color theme">{{ icon('theme') }}<span data-theme-label>Theme</span></wa-button></div></header>
+    {% if view == 'settings' %}{{ tabs([('connections','Connections','/ui/settings?section=connections'),('backups','Backups','/ui/settings?section=backups'),('automation','Automation','/ui/settings?section=automation'),('providers','AI providers','/ui/settings?section=providers'),('learning','Learning','/ui/settings?section=learning'),('rlm','RLM','/ui/settings?section=rlm')],active_section,'Settings sections') }}{% endif %}
+    {% if view == 'sources' %}{{ tabs([('targets','Targets','/ui/sources?tab=targets'),('companies','Company signals','/ui/sources?tab=companies'),('discovery','Discovery sources','/ui/sources?tab=discovery'),('preferences','Search preferences','/ui/sources?tab=preferences')],q.get('tab','targets'),'Source sections') }}{% endif %}
+    {% if view == 'evidence' %}{{ tabs([('all','Evidence library','/ui/evidence'),('imports','Import material','/ui/evidence?tab=imports')],active_section,'Evidence sections') }}{% endif %}
+    {% if view == 'activity' %}{{ tabs([('all','Activity','/ui/activity'),('diagnostics','Diagnostics & support','/ui/activity?tab=diagnostics')],active_section,'Activity sections') }}{% endif %}
+    {% if view in ['overview','workers'] %}<nav class="section-tabs nav nav-tabs" aria-label="Work views"><a class="nav-link {% if view == 'overview' %}active{% endif %}" href="/ui/overview">Overview</a><a class="nav-link {% if view == 'workers' %}active{% endif %}" href="/ui/workers">Workers & outcomes</a></nav>{% endif %}
+    {% if read_only %}<wa-callout variant="neutral" role="status">Read-only workspace. Changes and automation controls are disabled.</wa-callout>{% endif %}
+    <div id="runtime" hx-get="/ui/status" hx-trigger="load, ap:status from:body throttle:2s" hx-target="this" hx-select="unset" hx-swap="innerHTML" hx-sync="this:queue last"><span class="muted">Loading automation status…</span></div>
+    {% for error in errors %}<wa-callout variant="danger" role="alert">{{ error }}</wa-callout>{% endfor %}
+    {% if target_editor|default(false) %}{% include 'target_form.html' %}
+    {% elif importing|default(false) %}{% include 'import.html' %}
+    {% else %}
+      {% if view == 'sources' and q.get('tab','targets') == 'targets' %}<div class="page-tools"><p>Target companies directly or let connected sources find opportunities.</p><wa-button  href="/ui/targets/import">Import targets</wa-button><wa-button variant="brand" href="/ui/targets/new">{{ icon('plus') }}Add target</wa-button></div>{% endif %}
+      {% if form_view|default(view) == 'searches' %}<nav class="settings-jumps" aria-label="Search preference sections">{% for form in forms %}<a href="#form-{{ form.id }}" hx-boost="false">{{ form.title }}</a>{% endfor %}</nav>{% endif %}
+      {% if view == 'jobs' %}<div class="page-tools"><a href="/ui/sources?tab=preferences">Edit search preferences</a><wa-button  href="/api/jobs.csv?{{ urlencode(q) }}" hx-boost="false">Export opportunities</wa-button></div>{% endif %}
+      {% if form_view|default(view) == 'providers' %}{% set providers = values.get('providers',{}) %}<form class="filters" action="/ui/settings" method="get"><input type="hidden" name="section" value="providers"><wa-select label="Provider" name="provider">{% for provider in providers.get('providers',[]) %}<wa-option value="{{ provider.id }}" {% if provider.id == providers.get('selected_provider') %}selected{% endif %}>{{ provider.get('name') or provider.id }}</wa-option>{% endfor %}</wa-select><wa-button type="submit" >Show provider</wa-button></form>{% endif %}
+      {% if view == 'activity' and active_section == 'diagnostics' %}{% for form in forms %}{% include 'form.html' %}{% endfor %}{% endif %}
+      {% if view == 'outcomes' %}
+      <form class="filters" action="/ui/outcomes" method="get" hx-get="/ui/outcomes" hx-push-url="true" hx-sync="this:replace" hx-swap="outerHTML show:none">
+        <wa-select label="Run" name="run_id"><wa-option value="" {% if not q.get('run_id') %}selected{% endif %}>All runs</wa-option>{% for run in facets.get('runs',[]) %}<wa-option value="{{ run.id }}" {% if q.get('run_id') == run.id %}selected{% endif %}>{{ run.started_at|run_time }} · {{ run.role|label }} · {{ run.id[:8] }}</wa-option>{% endfor %}</wa-select>
+        <wa-select label="Chart window" name="days">{% for days in [7,30,90,365] %}<wa-option value="{{ days }}" {% if q.get('days','30') == days|string %}selected{% endif %}>{{ days }} days</wa-option>{% endfor %}</wa-select>
+        <wa-button type="submit" variant="brand">Show results</wa-button>
+      </form>
+      {% endif %}
+      {% if view in ['jobs','outreach'] or (view == 'activity' and active_section != 'diagnostics') or (view == 'sources' and q.get('tab','targets') == 'targets') or (view == 'evidence' and active_section != 'imports') %}{% set filter_values = facets|default(values.get('facets',{})) %}
+      <form class="filters" action="/ui/{{ view }}" method="get" role="search" hx-get="/ui/{{ view }}" hx-push-url="true" hx-sync="this:replace" hx-swap="outerHTML show:none">
+        {% if q.get('tab') %}<input type="hidden" name="tab" value="{{ q.tab }}">{% endif %}
+        <wa-input class="search-field" label="Search" id="filter-search" type="search" name="q" maxlength="200" value="{{ q.get('q','') }}" placeholder="{{ 'Message, error, source, or identifier…' if view == 'activity' else 'Repository, achievement, or skill…' if view == 'evidence' else 'Company, role, or keyword…' }}" autocomplete="off"></wa-input>
+        {% if view in ['jobs','outreach','sources'] %}<wa-select label="Status" name="state"><wa-option value="" {% if not q.get('state') %}selected{% endif %}>All statuses</wa-option>{% for option in filter_values.get('states') or (['draft','approved','sending','sent','uncertain','cancelled','failed','deferred'] if view == 'outreach' else ['active','paused'] if view == 'sources' else []) %}<wa-option value="{{ option }}" {% if q.get('state') == option %}selected{% endif %}>{{ option|label }}</wa-option>{% endfor %}</wa-select>{% endif %}
+        {% if view == 'outreach' %}<wa-select label="Channel" name="channel"><wa-option value="" {% if not q.get('channel') %}selected{% endif %}>All channels</wa-option>{% for channel in ['email','linkedin','x','manual'] %}<wa-option value="{{ channel }}" {% if q.get('channel') == channel %}selected{% endif %}>{{ channel|label }}</wa-option>{% endfor %}</wa-select>{% endif %}
+        {% if view == 'activity' %}<wa-select label="Severity" name="severity"><wa-option value="" {% if not q.get('severity') %}selected{% endif %}>All activity</wa-option>{% for key,label in [('error','Errors'),('warning','Warnings'),('info','Information')] %}<wa-option value="{{ key }}" {% if q.get('severity') == key or (q.get('tab') == 'issues' and key == 'error') %}selected{% endif %}>{{ label }}</wa-option>{% endfor %}</wa-select><wa-select label="Source" name="source"><wa-option value="" {% if not q.get('source') %}selected{% endif %}>All sources</wa-option>{% for source in filter_values.get('sources',[]) %}<wa-option value="{{ source }}" {% if q.get('source') == source %}selected{% endif %}>{{ source|label }}</wa-option>{% endfor %}</wa-select><wa-select label="Type" name="kind">{% for key,label in [('all','All types'),('pipeline','Applications'),('outreach','Outreach'),('setup','Connections & imports'),('operations','Operations')] %}<wa-option value="{{ key }}" {% if q.get('kind','all') == key %}selected{% endif %}>{{ label }}</wa-option>{% endfor %}</wa-select>{% endif %}
+        {% if view == 'jobs' %}<wa-select label="Source" name="source"><wa-option value="" {% if not q.get('source') %}selected{% endif %}>All sources</wa-option>{% for option in filter_values.get('sources',[]) %}<wa-option value="{{ option }}" {% if q.get('source') == option %}selected{% endif %}>{{ option }}</wa-option>{% endfor %}</wa-select><wa-select label="Company" name="company"><wa-option value="" {% if not q.get('company') %}selected{% endif %}>All companies</wa-option>{% for option in filter_values.get('companies',[]) %}<wa-option value="{{ option }}" {% if q.get('company') == option %}selected{% endif %}>{{ option }}</wa-option>{% endfor %}</wa-select><wa-select label="Minimum fit" name="min_score"><wa-option value="" {% if not q.get('min_score') %}selected{% endif %}>Any fit</wa-option>{% for score in [5,6,7,8,9] %}<wa-option value="{{ score }}" {% if q.get('min_score') == score|string %}selected{% endif %}>{{ score }}+</wa-option>{% endfor %}</wa-select>{% endif %}
+        {% if view == 'evidence' %}<wa-select label="Type" name="kind">{% for key,label in [('all','All evidence'),('repository','Projects'),('impact','Achievements'),('note','Work notes')] %}<wa-option value="{{ key }}" {% if q.get('kind','all') == key %}selected{% endif %}>{{ label }}</wa-option>{% endfor %}</wa-select>{% endif %}
+        <wa-button type="submit" variant="brand">Search</wa-button>{% if q.get('q') or q.get('state') or q.get('source') or q.get('company') or q.get('min_score') or q.get('severity') or q.get('channel') or q.get('kind','all') != 'all' %}<wa-button  href="/ui/{{ view }}{% if q.get('tab') %}?tab={{ q.tab }}{% endif %}">Clear</wa-button>{% endif %}
+      </form>{% endif %}
+      {% if view == 'evidence' and active_section != 'imports' %}<div class="evidence-workspace">{% endif %}
+      {% set controls_first = form_view|default(view) == 'providers' or view == 'evidence' %}
+      {% if controls_first %}<div class="forms-grid primary-forms" aria-label="{{ 'Provider preferences' if form_view|default(view) == 'providers' else 'Add evidence' }}">{% for form in forms %}{% include 'form.html' %}{% endfor %}</div>{% endif %}
+      {% if view == 'settings' and active_section == 'learning' %}{% for form in forms if form.route != 'learning/preview-policy' %}{% include 'form.html' %}{% endfor %}{% endif %}
+      <div class="page-panels">{% for title, endpoint in sections %}<wa-card id="panel-{{ loop.index0 }}" class="panel panel-{{ endpoint|replace('/','-') }}" aria-label="{{ title }}" hx-get="/ui/fragments/{{ view }}/{{ loop.index0 }}?{{ urlencode(q) }}" hx-trigger="load, ap:data from:body throttle:2s{% if endpoint in ['work','workers'] or (view == 'overview' and endpoint == 'summary') %}, ap:automation from:body throttle:2s{% endif %}" hx-target="this" hx-select="unset" hx-swap="innerHTML" hx-sync="this:queue last" hx-indicator="this"><h2>{{ title }}</h2><p class="muted" role="status">Loading {{ title|lower }}…</p></wa-card>{% endfor %}</div>
+      {% if view == 'evidence' and active_section != 'imports' %}</div>{% endif %}
+      {% if forms and not controls_first and not (view == 'activity' and active_section == 'diagnostics') %}
+      {% set is_connections = form_view|default(view) == 'connections' %}
+      {% if view == 'profile' %}{% set completion = values.get('setup/profile',{}).get('completion',{}) %}{% include 'profile_fields.html' %}{% else %}
+      <div class="forms-grid" aria-label="Edit {{ title|lower }}">
+        {% for form in forms if (not is_connections or (not form.id.startswith('verify-') and not form.id.startswith('connect-') and form.id not in ['gmail','github'] and not form.get('advanced'))) and form.id not in ['backup-sync','backup-check','backup-points'] and (not (view == 'settings' and active_section == 'learning') or form.route == 'learning/preview-policy') %}
+          {% if form.get('advanced') %}<wa-details class="form-disclosure" summary="{{ form.title }}">{% include 'form.html' %}</wa-details>{% else %}{% include 'form.html' %}{% endif %}
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% if is_connections %}<wa-details class="connection-options" summary="Advanced connection options"><p class="muted">Import an existing session, change a service address, or configure additional tools.</p><div class="forms-grid">{% for form in forms if form.get('advanced') %}{% include 'form.html' %}{% endfor %}</div></wa-details>{% endif %}
+      {% endif %}
+
+    {% endif %}
+    <footer><span>ApplyPilot</span><span>Local & private</span>{% if view == 'overview' %}<a href="/ui/workers">Worker details</a>{% endif %}{% if dev_build %}<small class="dev-build" title="Dashboard build captured at server startup"><span>DEV · v{{ dev_build.version }}</span><code>{{ dev_build.revision }}</code></small>{% endif %}</footer>
+  </main>
+</div>
+<wa-callout id="toast" class="toast" role="status" aria-live="polite" hidden></wa-callout>
+<wa-dialog id="details" label="Details"><div id="detail-content"></div></wa-dialog>
+<noscript><p class="notice">Enable JavaScript for live panels and dashboard actions.</p></noscript>
+</body></html>

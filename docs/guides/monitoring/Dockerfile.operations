@@ -1,0 +1,11 @@
+FROM python:3.12-slim
+WORKDIR /app
+RUN pip install --no-cache-dir 'psycopg[binary]>=3.2,<4' 'filelock>=3.16,<4'
+# No browser, model SDK, application credentials or embedded server in this image.
+COPY src/applypilot/__init__.py src/applypilot/config.py src/applypilot/postgres.py src/applypilot/postgres_sql.py src/applypilot/postgres_reads.py /app/applypilot/
+COPY src/applypilot/operations /app/applypilot/operations
+COPY docs/guides/monitoring/check_operations_image.py /app/check_operations_image.py
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 APPLYPILOT_DIR=/workspace
+RUN python /app/check_operations_image.py --self-test
+HEALTHCHECK --interval=30s --timeout=8s --start-period=15s --retries=3 CMD ["python", "/app/check_operations_image.py", "--healthcheck"]
+CMD ["python", "-m", "applypilot.operations.exporter", "--root", "/workspace", "--require-postgres-url"]

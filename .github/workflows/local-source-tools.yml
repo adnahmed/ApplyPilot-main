@@ -1,0 +1,17 @@
+name: Local source-tools installation
+on:
+  pull_request:
+    paths: ['docs/guides/source-tools/**', 'src/applypilot/integrations/worker_main.py', '.dockerignore', '.github/workflows/local-source-tools.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build separate local clients (includes offline protocol/browser checks)
+        run: docker build -f docs/guides/source-tools/Dockerfile -t applypilot-source-tools:ci .
+      - name: Repeat installed contracts without network or host files
+        run: docker run --rm --network none --shm-size 512m --cap-drop ALL --security-opt no-new-privileges:true applypilot-source-tools:ci python /opt/applypilot/smoke.py

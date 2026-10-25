@@ -1,0 +1,24 @@
+{% from 'macros.html' import empty, metric %}
+{% from 'components.html' import detail_link, read_more, section_header %}
+{% set catalog = value.get('catalog', value) %}
+{% set summary = catalog.get('summary',{}) %}
+<section class="evidence-overview" aria-label="Evidence overview">
+  <div class="metrics">{{ metric('Projects',catalog.get('evidence_count',0)) }}{{ metric('Recorded outcomes',catalog.get('impact_count',0)) }}{{ metric('Supported statements',catalog.get('claims_count',0)) }}</div>
+  {% if summary.get('text') %}{{ read_more(summary.text,'Read experience summary') }}{% endif %}
+</section>
+{% call section_header('Your evidence library','Review the work and results available to your next application.') %}<span class="muted">{{ value.get('total',0) }} matching entries</span>{% endcall %}
+<div class="evidence-library">
+{% for entry in value.get('entries',catalog.get('entries',[])) %}
+  {% set detail_kind = 'evidence' if entry.kind == 'repository' else 'diary' %}
+  {% set detail_query = {'id':entry.id} if entry.kind == 'repository' else {'kind':'note' if entry.kind == 'note' else 'record','id':entry.id.split(':',1)[-1]} %}
+  {% set detail_url = '/ui/detail/' + detail_kind + '?' + urlencode(detail_query) %}
+  <article class="evidence-entry">
+    <div class="entry-kind">{{ {'repository':'Project','note':'Work note','impact':'Achievement'}.get(entry.kind,'Achievement') }}</div>
+    <div class="entry-content"><h3>{{ detail_link(detail_url,entry.title) }}</h3>
+    {% if entry.get('text') %}{{ read_more(entry.text,'Read full contribution') }}{% else %}<p class="muted">Open this entry to review its source and supported statements.</p>{% endif %}
+    {% if entry.kind == 'note' and entry.get('records') %}<ul class="linked-results">{% for record in entry.records %}<li>{{ detail_link('/ui/detail/diary?' + urlencode({'kind':'record','id':record.id}),record.get('problem') or 'Extracted achievement') }}</li>{% endfor %}</ul>{% endif %}
+    <div class="entry-meta">{% if entry.get('created_at') %}<time data-time datetime="{{ entry.created_at }}">{{ entry.created_at }}</time>{% endif %}{% if entry.get('url') is string and (entry.url.startswith('https://') or entry.url.startswith('http://')) %}<a href="{{ entry.url }}" target="_blank" rel="noopener noreferrer">Original source ↗</a>{% endif %}</div></div>
+    <div class="entry-action">{{ detail_link(detail_url,'View' if read_only else 'Review','btn btn-sm') }}</div>
+  </article>
+{% else %}{{ empty('No matching evidence.','Import supporting material or record a contribution to build your library.','/ui/evidence?tab=imports','Import material') }}{% endfor %}
+</div>

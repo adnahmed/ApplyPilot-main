@@ -1,0 +1,184 @@
+# Workday employer registry for ApplyPilot
+# Users can add their own employers by following this pattern.
+# Find your employer's Workday URL at: https://[company].wd[N].myworkdayjobs.com
+
+# Canada-only employers removed 2026-06-10 — the pipeline targets Seattle/US
+# roles and the scorer terminal-archives non-US-eligible postings, so crawling
+# them only burned enrich/score tokens. Removed: TD, CIBC, RBC, BMO, Manulife,
+# Sun Life, Desjardins, Intact, Aviva Canada, TMX, Brookfield, CPP Investments,
+# OMERS, Ontario Teachers, PSP, CDPQ, HOOPP, AIMCo, BlackBerry, PwC, BDO,
+# TELUS International, TELUS Health, Canadian Tire, PC Financial, CAE, Magna,
+# MLSE, OLG, Enbridge, Canadian Solar. Recover entries from git history if a
+# US-focused board emerges for any of them.
+
+employers:
+
+  # ── US Tech ─────────────────────────────────────────────────────────────
+
+  workday:
+    name: "Workday"
+    tenant: "workday"
+    site_id: "Workday"
+    base_url: "https://workday.wd5.myworkdayjobs.com"
+
+  salesforce:
+    name: "Salesforce"
+    tenant: "salesforce"
+    site_id: "External_Career_Site"
+    base_url: "https://salesforce.wd12.myworkdayjobs.com"
+
+  nvidia:
+    name: "NVIDIA"
+    tenant: "nvidia"
+    site_id: "NVIDIAExternalCareerSite"
+    base_url: "https://nvidia.wd5.myworkdayjobs.com"
+
+  # Netflix — disabled 2026-06-10: netflix.wd1 CXS API returns HTTP 422
+  # (same death signature as ServiceNow/DocuSign/Uber). Netflix moved to
+  # Eightfold; unlike Starbucks/HP, their deployment answers anonymously:
+  #   https://explore.jobs.netflix.net/api/apply/v2/jobs?domain=netflix.com
+  # → future-scraper candidate, see CLAUDE.md Future Work.
+
+  cisco:
+    name: "Cisco"
+    tenant: "cisco"
+    site_id: "Cisco_Careers"
+    base_url: "https://cisco.wd5.myworkdayjobs.com"
+
+  intel:
+    name: "Intel"
+    tenant: "intel"
+    site_id: "External"
+    base_url: "https://intel.wd1.myworkdayjobs.com"
+
+  adobe:
+    name: "Adobe"
+    tenant: "adobe"
+    site_id: "external_experienced"
+    base_url: "https://adobe.wd5.myworkdayjobs.com"
+
+  motorola:
+    name: "Motorola Solutions"
+    tenant: "motorolasolutions"
+    site_id: "Careers"
+    base_url: "https://motorolasolutions.wd5.myworkdayjobs.com"
+
+  ciena:
+    name: "Ciena"
+    tenant: "ciena"
+    site_id: "Careers"
+    base_url: "https://ciena.wd5.myworkdayjobs.com"
+
+  # Thomson Reuters removed 2026-04-23 — user is not interested; 327 jobs
+  # had been pulled wastefully over prior runs. Existing TR jobs in DB are
+  # also blocked at apply-time via ~/.applypilot/company_limits.yaml
+  # (thomsonreuters: max_in_flight: 0).
+
+  moderna:
+    name: "Moderna"
+    tenant: "modernatx"
+    site_id: "M_tx"
+    base_url: "https://modernatx.wd1.myworkdayjobs.com"
+
+  # ServiceNow / DocuSign / Uber — disabled 2026-05-07 after persistent HTTP 422
+  # responses across all search queries. Manual probe confirmed:
+  #   - servicenow.wd1.myworkdayjobs.com/ServiceNowCareers → HTTP 500 on UI, 422 on API
+  #   - docusign.wd5.myworkdayjobs.com/External           → HTTP 500; DocuSign moved to iCIMS
+  #     (uscareers-docusign.icims.com)
+  #   - uber.wd5.myworkdayjobs.com/uberCareers            → HTTP 500; Uber pulled the public
+  #     Workday tenant. Uber's Greenhouse board (slug "uber") returns 404 too.
+  # If any of these tenants comes back online, re-add with the new site_id.
+
+  # ── US Fintech ──────────────────────────────────────────────────────────
+
+  fis:
+    name: "FIS Global"
+    tenant: "fis"
+    site_id: "SearchJobs"
+    base_url: "https://fis.wd5.myworkdayjobs.com"
+
+  mastercard:
+    name: "Mastercard"
+    tenant: "mastercard"
+    site_id: "CorporateCareers"
+    base_url: "https://mastercard.wd1.myworkdayjobs.com"
+
+  paypal:
+    name: "PayPal"
+    tenant: "paypal"
+    site_id: "jobs"
+    base_url: "https://paypal.wd1.myworkdayjobs.com"
+
+  # ── Seattle-area additions (2026-04-24) ──────────────────────────
+  # Verified via the Missing-Employer ATS audit.
+
+  expedia:
+    name: "Expedia Group"
+    tenant: "expedia"
+    site_id: "search"
+    base_url: "https://expedia.wd108.myworkdayjobs.com"
+
+  # ── Mega-corps verified 2026-04-26 (P2.6) ─────────────────────────────
+  # Found by scraping each company's careers landing page for
+  # myworkdayjobs URLs + brute-forcing common site_id values, then
+  # confirming the CXS jobs API returned a non-zero total.
+
+  tmobile:
+    name: "T-Mobile"
+    tenant: "tmobile"
+    site_id: "External"
+    base_url: "https://tmobile.wd1.myworkdayjobs.com"
+
+  boeing:
+    name: "Boeing"
+    tenant: "boeing"
+    site_id: "External_Careers"
+    base_url: "https://boeing.wd1.myworkdayjobs.com"
+
+  accenture:
+    name: "Accenture"
+    tenant: "accenture"
+    site_id: "AccentureCareers"
+    base_url: "https://accenture.wd103.myworkdayjobs.com"
+
+  # ── Seattle expansion (2026-06-10) ──────────────────────────────────────
+  # Verified via probe agents + manual CXS re-probe (POST .../wday/cxs/
+  # {tenant}/{site_id}/jobs returned non-zero "total" for each).
+
+  nordstrom:
+    name: "Nordstrom"
+    tenant: "nordstrom"
+    site_id: "nordstrom_careers"
+    base_url: "https://nordstrom.wd501.myworkdayjobs.com"  # non-standard wd501 cluster
+
+  rtx:
+    name: "Raytheon (RTX)"
+    tenant: "globalhr"
+    site_id: "REC_RTX_Ext_Gateway"
+    base_url: "https://globalhr.wd5.myworkdayjobs.com"
+    # Gateway covers all RTX business units (Raytheon, Pratt & Whitney,
+    # Collins Aerospace) — ~4,200 postings; rely on location/keyword filters.
+
+  remitly:
+    name: "Remitly"
+    tenant: "remitly"
+    site_id: "Remitly_Careers"
+    base_url: "https://remitly.wd5.myworkdayjobs.com"
+
+  zillow:
+    name: "Zillow Group"
+    tenant: "zillow"
+    site_id: "Zillow_Group_External"
+    base_url: "https://zillow.wd5.myworkdayjobs.com"
+
+  f5:
+    name: "F5"
+    tenant: "ffive"
+    site_id: "f5jobs"
+    base_url: "https://ffive.wd5.myworkdayjobs.com"
+
+  prologis:
+    name: "Prologis"
+    tenant: "prologis"
+    site_id: "Prologis_External_Careers"
+    base_url: "https://prologis.wd5.myworkdayjobs.com"

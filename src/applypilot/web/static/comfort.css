@@ -1,0 +1,400 @@
+/* Daily work is primary. Existing diagnostic surfaces retain their own layout. */
+.nav-group {
+    margin-top: 12px;
+    border-top: 1px solid #eaffee13;
+    padding-top: 10px;
+}
+
+.nav-group>summary {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    padding: 12px 10px;
+    font-size: 12px;
+    color: var(--side-muted);
+    cursor: pointer;
+    list-style: none;
+}
+
+.nav-group>summary::after {
+    content: '›';
+    margin-left: auto;
+    font-size: 18px;
+}
+
+.nav-group[open]>summary::after {
+    transform: rotate(90deg);
+}
+
+.nav-group>summary::-webkit-details-marker {
+    display: none;
+}
+
+.nav-group a {
+    padding-left: 16px;
+}
+
+.nav-group>summary .icon {
+    flex: none;
+}
+
+.comfort-disclosure {
+    margin: 20px 0;
+    padding: 20px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--surface);
+}
+
+.comfort-disclosure>summary {
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.6;
+}
+
+.comfort-disclosure>summary>span {
+    display: block;
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--muted);
+    margin: 4px 0 0 18px;
+}
+
+.comfort-disclosure[open]>summary {
+    margin-bottom: 22px;
+}
+
+.technical-details {
+    margin: 12px 0;
+}
+
+.technical-details>summary {
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 13px;
+    line-height: 1.7;
+    padding: 6px 0;
+}
+
+.technical-details[open]>summary {
+    margin-bottom: 10px;
+}
+
+.attention-inbox {
+    margin: 0 0 24px;
+    padding: 22px 24px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+}
+
+.attention-inbox h2 {
+    font-size: 16px;
+    margin: 0 0 12px;
+}
+
+.attention-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px 20px;
+    padding: 13px 0;
+    border-top: 1px solid var(--line);
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.attention-item>span {
+    color: var(--muted);
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.quiet-status {
+    margin: 0 0 22px;
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.7;
+}
+
+.settings-destinations {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    margin: 0 0 24px;
+}
+
+.settings-destination {
+    display: block;
+    padding: 22px;
+    text-decoration: none;
+}
+
+.settings-destination h2 {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 16px;
+}
+
+.settings-destination p {
+    margin-top: 8px;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.workspace-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0 0 18px;
+}
+
+.workspace-tabs a {
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    text-decoration: none;
+    border: 1px solid var(--line);
+}
+
+.workspace-tabs a[aria-current] {
+    background: var(--green-pale);
+    color: var(--ink);
+    font-weight: 600;
+}
+
+.draft-scope {
+    line-height: 1.8;
+}
+
+.readable-facts {
+    margin: 12px 0;
+}
+
+.readable-facts>div {
+    display: grid;
+    grid-template-columns: minmax(110px, 0.8fr) minmax(0, 2fr);
+    gap: 10px 18px;
+    padding: 9px 0;
+}
+
+.readable-facts dt {
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 500;
+    overflow-wrap: anywhere;
+}
+
+.readable-facts dd {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.readable-facts .readable-facts {
+    margin: 0;
+}
+
+.readable-list {
+    margin: 0;
+    padding-left: 18px;
+    line-height: 1.7;
+}
+
+.readable-list li+li {
+    margin-top: 8px;
+}
+
+.evidence-story {
+    margin-top: 14px;
+}
+
+.evidence-story h4 {
+    margin: 24px 0 12px;
+    font-size: 14px;
+}
+
+.evidence-story p {
+    font-size: 14px;
+    line-height: 1.7;
+}
+
+.evidence-measurement {
+    padding: 16px 0;
+    border-top: 1px solid var(--line);
+}
+
+.evidence-story blockquote {
+    border-left: 3px solid var(--line);
+    padding: 10px 16px;
+    margin: 12px 0;
+    line-height: 1.7;
+    font-size: 13px;
+    white-space: pre-wrap;
+}
+
+.change-review {
+    padding: 18px 0;
+    border-top: 1px solid var(--line);
+}
+
+.change-review h3 {
+    font-size: 17px;
+    margin: 0 0 8px;
+}
+
+.change-review>p {
+    font-size: 14px;
+    line-height: 1.7;
+    margin: 8px 0 18px;
+}
+
+.change-table {
+    table-layout: fixed;
+    width: 100%;
+}
+
+.change-table th,
+.change-table td {
+    vertical-align: top;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    line-height: 1.6;
+    font-size: 13px;
+}
+
+.change-table th:first-child {
+    width: 28%;
+}
+
+.change-table td {
+    width: 36%;
+}
+
+.change-table .readable-facts>div {
+    grid-template-columns: 1fr;
+    gap: 2px;
+}
+
+.change-table .readable-facts dd {
+    font-size: 13px;
+}
+
+/* Keep the lifecycle button available away from Today, but not as a second hero. */
+body:not([data-view=overview]) .autopilot-control {
+    padding: 14px 20px;
+    gap: 18px;
+    margin-bottom: 20px;
+}
+
+body:not([data-view=overview]) .autopilot-control h2 {
+    font-size: 16px;
+    margin-top: 0;
+}
+
+body:not([data-view=overview]) .autopilot-control .eyebrow {
+    display: none;
+}
+
+body:not([data-view=overview]) .autopilot-control-copy p {
+    font-size: 12px;
+}
+
+body:not([data-view=overview]) .autopilot-toggle {
+    min-height: 42px;
+    min-width: 170px;
+    font-size: 14px;
+}
+
+body:not([data-view=overview]) #autopilot-control-state {
+    display: none;
+}
+
+@media(min-width:651px) {
+
+    .nav-collapsed .nav-group>summary>span:not(:first-child),
+    .nav-collapsed .nav-group>summary::after {
+        display: none;
+    }
+
+    .nav-collapsed .nav-group>summary {
+        justify-content: center;
+    }
+}
+
+@media(max-width:760px) {
+    .settings-destinations {
+        grid-template-columns: 1fr;
+    }
+
+    .readable-facts>div {
+        grid-template-columns: 1fr;
+        gap: 3px;
+    }
+
+    .change-table {
+        min-width: 560px;
+    }
+
+    .comfort-disclosure {
+        padding: 16px;
+    }
+
+    body:not([data-view=overview]) .autopilot-control {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .attention-item {
+        align-items: flex-start;
+    }
+
+    .task-drawer .readable-facts dd {
+        font-size: 13px;
+    }
+}
+
+/* The original compact mobile styles shrink essential copy to 8–10px. */
+@media(max-width:650px) {
+
+    .btn,
+    .btn-sm,
+    .pills button,
+    .card select,
+    .chart-legend button {
+        font-size: 12px;
+    }
+
+    .stat-top,
+    .stat-foot,
+    .card-head p,
+    .cell-secondary,
+    .card-foot,
+    .page-note {
+        font-size: 12px;
+        line-height: 1.6;
+    }
+
+    .job-link,
+    td,
+    .activity-item .job-link,
+    .activity-item h3 {
+        font-size: 13px;
+    }
+
+    .stat-value {
+        font-size: 30px;
+    }
+
+    .toolbar select {
+        max-width: none;
+    }
+}

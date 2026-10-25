@@ -1,0 +1,100 @@
+{% from 'macros.html' import status_variant %}
+{% from 'macros.html' import record, action, metric, diagnostics, empty, chart, icon %}
+{% set collapsible = view == 'overview' and endpoint in ['opportunities','work'] %}
+{% if collapsible %}<details class="overview-disclosure" data-disclosure-key="overview-{{ endpoint }}" {% if endpoint == 'work' %}open{% endif %}><summary><h2>{{ title }}</h2></summary><div class="overview-disclosure-content">{% if endpoint == 'work' %}<p class="section-note"><a href="/ui/workers">View workers</a></p>{% endif %}{% endif %}
+{% if not collapsible and endpoint != 'sources' and not (endpoint == 'setup' and view == 'evidence') %}<div class="section-heading"><h2>{{ title }}</h2>{% if endpoint == 'work' %}<a href="/ui/workers">View workers</a>{% elif endpoint == 'summary' and view == 'overview' %}<a href="/ui/outcomes">See results</a>{% endif %}</div>{% endif %}
+{% if endpoint == 'opportunities' %}
+  {% include 'opportunities.html' %}
+{% elif endpoint == 'opportunities/strategies' %}
+  {% include 'pursuit.html' %}
+{% elif endpoint == 'summary' %}
+  {% if value.get('database_available') is sameas false %}<wa-callout variant="danger">The database is reconnecting. Your saved results will appear when it recovers.</wa-callout>
+  {% else %}{% set totals = value.get('totals',{}) %}{% set outcomes = value.get('outcome_groups',{}) %}
+  <div class="metrics">{{ metric('Opportunities worked' if value.get('run_id') else 'Opportunities',totals.get('jobs'),(totals.get('companies',0)|string) + ' companies') }}{{ metric('Confirmed submissions',totals.get('submitted'),'Selected run' if value.get('run_id') else (totals.get('submitted_today',0)|string) + ' today') }}{{ metric('Messages sent',totals.get('outreach_sent')) }}{{ metric('Interviews',outcomes.get('interviews',0)) }}</div>
+  {% if totals.get('reported_unverified') %}<p class="section-note"><strong>{{ totals.reported_unverified }}</strong> reported submissions still lack confirmation evidence.</p>{% endif %}
+  {% if value.get('run_id') %}<p class="section-note">{{ value.scope_note }}</p><div class="results-summary"><span><strong data-number>{{ totals.get('attempts',0) }}</strong> application attempts</span><span><strong data-number>{{ totals.get('cancelled',0) }}</strong> cancelled</span><span><strong data-number>{{ totals.get('verification_holds',0) }}</strong> awaiting verification</span><span><strong data-number>{{ totals.get('unfinished',0) }}</strong> unfinished</span></div>{% elif view == 'outcomes' %}<p class="section-note">Totals include all saved runs. The chart shows the selected date window.</p>{% endif %}
+  {% if view == 'overview' %}
+  {% from 'automation_work.html' import activity_bubbles %}
+  {{ activity_bubbles(value.get('automation') or {}) }}
+  <div class="pipeline-overview"><div><h3>Your application pipeline</h3><p class="muted">From discovery to a submitted application.</p></div><ol class="pipeline-stages">{% for label,number in [('Discovered',totals.get('jobs',0)),('Assessed',totals.get('scored',0)),('Ready to apply',totals.get('ready',0)),('Submitted',totals.get('submitted',0))] %}<li><span>{{ label }}</span><strong data-number>{{ number }}</strong></li>{% endfor %}</ol></div>
+  <div class="next-step"><span class="next-step-icon">{{ icon('plane') }}</span><div><strong>{{ 'Applications ready to go' if totals.get('ready',0) else 'Keep your search moving' }}</strong><p>{{ (totals.get('ready',0)|string) + ' opportunities are prepared for application.' if totals.get('ready',0) else 'Review opportunities or adjust your target roles and sources.' }}</p></div><wa-button href="/ui/jobs{% if totals.get('ready',0) %}?state=ready_to_apply{% endif %}" variant="neutral" appearance="outlined">{{ 'View ready opportunities' if totals.get('ready',0) else 'Browse opportunities' }}</wa-button></div>
+  {{ chart('Search activity','line',value.get('series',[]),[{'key':'discovered','label':'Opportunities found'},{'key':'submitted','label':'Applications sent'},{'key':'outreach','label':'Messages sent'}],'Daily counts') }}
+  {% else %}
+  <div class="results-summary"><span><strong data-number>{{ outcomes.get('responses',0) }}</strong> recruiter responses</span><span><strong data-number>{{ outcomes.get('offers',0) }}</strong> offers</span><span>{{ 'Selected run · up to ' if value.get('run_id') else 'Last ' }}{{ value.get('days',30) }} days shown below</span></div>
+  {{ chart('Search activity','line',value.get('series',[]),[{'key':'discovered','label':'Opportunities worked' if value.get('run_id') else 'Opportunities found'},{'key':'submitted','label':'Confirmed submissions'},{'key':'outreach','label':'Messages sent'}],'Daily counts · UTC') }}
+  <div class="chart-grid">{{ chart('Application attempt outcomes' if value.get('run_id') else 'Where opportunities stand','bar',value.get('stages',[]),[{'key':'value','label':'Attempts' if value.get('run_id') else 'Opportunities'}]) }}{{ chart('Recorded outcomes','bar',value.get('outcomes',[]),[{'key':'jobs','label':'Jobs'}]) }}</div>
+  {% if value.get('top_companies') %}<h3>Companies in your search</h3><div class="table-wrap"><table class="table"><thead><tr><th>Company</th><th>Opportunities</th><th>Applications sent</th></tr></thead><tbody>{% for row in value.top_companies %}<tr><th><a href="/ui/jobs?{{ urlencode({'company':row.label}) }}">{{ row.label }}</a></th><td data-number>{{ row.value }}</td><td data-number>{{ row.submitted }}</td></tr>{% endfor %}</tbody></table></div>{% endif %}
+  {% endif %}{% endif %}
+{% elif endpoint == 'work' %}
+  {% from 'work_activity.html' import activity_summary %}
+  {% from 'pipeline_flow.html' import pipeline_flow %}
+  {% set now = value.get('now',{}) %}{% set recovery = value.get('recovery',{}) %}
+  {% if now.get('automation') %}
+  <div class="work-summary"><span><strong>{{ now.automation.in_progress if now.automation.in_progress is not none else '—' }}</strong> tasks in progress</span><span><strong>{{ now.automation.queued if now.automation.queued is not none else '—' }}</strong> queued (approximate)</span></div>
+  {% else %}
+  <div class="work-summary"><span><strong>{{ now.get('active_count',0) }}</strong> current tasks</span><span><strong>{{ now.get('waiting_provider',0) }}</strong> waiting for AI</span><span><strong>{{ recovery.get('pending') if recovery.get('available') else '—' }}</strong> application recoveries pending</span>{% if recovery.get('available') and recovery.get('overdue') %}<span><strong>{{ recovery.overdue }}</strong> past their retry time</span>{% endif %}</div>
+  {% endif %}
+  {{ activity_summary(now.get('activity_counts',{})) }}
+  {{ pipeline_flow(now.get('pipeline') or {}) }}
+  {% if not now.get('automation') %}
+  {% for item in now.get('active',[])[:5] %}
+    {% set work = item|work_activity %}
+    <article class="activity-row"><span class="activity-dot {{ 'running' if work.bucket == 'running' else '' }}"></span><div>
+      <strong>{{ work.title }}</strong>
+      {% if work.target %}<small>{{ work.target }}</small>{% endif %}
+      {% if work.company %}<small>{{ work.company }}</small>{% endif %}
+      {% if work.purpose %}<p class="row-description">{{ work.purpose }}</p>{% endif %}
+      <small>{{ work.detail }}</small>
+    </div><wa-badge variant="{{ status_variant(work.state) }}">{{ work.status }}</wa-badge></article>
+  {% else %}<p class="quiet-empty">{{ 'Waiting for the next work item.' if now.get('current') else 'No current activity report. Start Autopilot or check Workers for details.' }}</p>{% endfor %}
+  {% if now.get('active_count',0) > 5 %}<p class="muted">Showing 5 of {{ now.active_count }} current tasks. <a href="/ui/workers">See all tasks by activity</a></p>{% endif %}
+  {% endif %}
+  <div class="section-heading section-divider"><h3>Latest outcomes</h3><a href="/ui/activity">All activity</a></div>
+  {% for item in value.get('items',[])[:5] %}<article class="activity-row"><span class="activity-dot {{ 'failed' if item.get('outcome') == 'failed' else '' }}"></span><div><strong>{{ item.get('title') or item.get('action') or 'Search activity' }}</strong>{% if item.get('company') or item.get('target') %}<small>{{ item.get('company') or item.get('target') }}</small>{% endif %}<p class="row-description">{{ (item.get('reason') or item.get('message') or '')|truncate(180) }}</p></div><wa-badge variant="{{ status_variant('status-failed' if item.get('outcome') == 'failed' else '') }}">{{ item.get('outcome','recorded')|label }}</wa-badge></article>{% else %}<p class="quiet-empty">Completed work will appear here as your search progresses.</p>{% endfor %}
+{% elif endpoint == 'jobs' %}
+  <p class="result-count"><strong data-number>{{ value.get('total',0) }}</strong> matching opportunities</p><div class="table-wrap"><table class="table opportunities-table"><thead><tr><th>Role & company</th><th>Location</th><th>Fit</th><th>Progress</th><th>Source</th></tr></thead><tbody>{% for item in value.get('items',[]) %}<tr><th><a href="/ui/detail/job?{{ urlencode({'url':item.url}) }}" hx-get="/ui/detail/job?{{ urlencode({'url':item.url}) }}" hx-target="#detail-content" hx-select="unset" hx-swap="innerHTML" data-open-dialog>{{ item.title or 'Untitled opportunity' }}</a><small>{{ item.company }}</small></th><td>{{ item.get('location') or 'Not recorded' }}</td><td><span class="fit-score">{{ item.fit_score if item.get('fit_score') is not none else '—' }}</span></td><td><wa-badge variant="{{ status_variant(item.get('state','discovered')) }}">{{ (item.get('state') or item.get('apply_status') or 'Discovered')|label }}</wa-badge></td><td>{{ item.get('site','') }}</td></tr>{% else %}<tr><td colspan="5">No opportunities match these filters. Try a broader search or another source.</td></tr>{% endfor %}</tbody></table></div>
+{% elif endpoint == 'targets' %}
+  {% if not value.get('items') %}{{ empty('Where would you like to work?','Add a company or careers page. ApplyPilot will research openings and people there.','/ui/targets/new','Add a target') }}{% else %}<div class="table-wrap"><table class="table"><thead><tr><th>Company</th><th>Goal</th><th>Priority</th><th>Research</th><th>Applications</th><th>Outreach</th></tr></thead><tbody>{% for item in value['items'] %}<tr><th><a href="/ui/targets/{{ item.id }}">{{ item.company or item.website }}</a>{% if item.blocker %}<small class="error">{{ item.blocker }}</small>{% endif %}</th><td>{{ target_actions[item.action] }}</td><td><wa-badge variant="{{ status_variant(item.priority) }}">{{ item.priority|label }}</wa-badge></td><td>{{ item.research_state|label }}<small>{{ item.openings }} openings</small></td><td>{{ item.application_status|label }}</td><td>{{ item.outreach_status|label }}</td></tr>{% endfor %}</tbody></table></div>{% endif %}
+{% elif endpoint == 'sources' %}
+  {% include 'sources.html' %}
+{% elif endpoint == 'career-ops' %}
+  {% include 'career_ops.html' %}
+{% elif endpoint == 'company-discovery' %}
+  {% include 'company_discovery.html' %}
+{% elif endpoint == 'outreach' %}
+  <div class="table-wrap"><table class="table"><thead><tr><th>Person & company</th><th>Conversation</th><th>Channel</th><th>Progress</th><th>Sent</th></tr></thead><tbody>{% for item in value.get('items',[]) %}<tr><th>{{ item.name }}<small>{{ item.company }}</small></th><td><a hx-get="/ui/detail/outreach/{{ item.id }}" href="/ui/detail/outreach/{{ item.id }}" hx-target="#detail-content" hx-select="unset" hx-swap="innerHTML" data-open-dialog>{{ item.get('title') or 'Company introduction' }}</a></td><td>{{ item.channel|label }}</td><td><wa-badge variant="{{ status_variant(item.state) }}">{{ item.state|label }}</wa-badge></td><td><time data-time datetime="{{ item.sent_at or '' }}">{{ item.sent_at or 'Not sent' }}</time></td></tr>{% else %}<tr><td colspan="5">No conversations match these filters. Company research will bring contacts here.</td></tr>{% endfor %}</tbody></table></div>
+{% elif endpoint in ['activity','setup/tasks'] %}
+  {% include 'activity.html' %}
+{% elif endpoint == 'setup' %}
+  {% if view == 'evidence' %}
+    {% if q.get('tab','repositories') == 'imports' %}
+    <div class="table-wrap"><table class="table"><thead><tr><th>Supporting material</th><th>Type</th><th>Actions</th></tr></thead><tbody>{% for source in value.get('sources',[]) %}<tr><th>{{ source.get('name') or source.get('id') }}{% if source.get('characters') %}<small>{{ source.characters }} characters</small>{% endif %}</th><td>{{ source.get('kind','material')|label }}</td><td>{% if not read_only and not source.get('existing') %}{{ action('setup/remove-source','Remove intake copy',{'id':source.id},'evidence','Remove this imported copy?') }}{% endif %}</td></tr>{% else %}<tr><td colspan="3">Import supporting material below. It becomes another source alongside your profile and project evidence.</td></tr>{% endfor %}</tbody></table></div>
+    {% if value.get('sources_total',0) > value.get('sources_page_size',20) %}{% set page = value.get('sources_page',1) %}<nav class="pagination" aria-label="Material pages">{% if page > 1 %}<wa-button href="/ui/evidence?tab=imports&source_page={{ page - 1 }}" variant="neutral" appearance="outlined">Previous</wa-button>{% endif %}<span>Page {{ page }}</span>{% if page * value.get('sources_page_size',20) < value.sources_total %}<wa-button href="/ui/evidence?tab=imports&source_page={{ page + 1 }}" variant="neutral" appearance="outlined">Next</wa-button>{% endif %}</nav>{% endif %}
+    {% else %}{% include 'evidence.html' %}{% endif %}
+  {% elif form_view|default(view) == 'connections' or value.get('connection_statuses') %}
+    {% include 'connections.html' %}
+  {% else %}{% set compiled = value.get('compiled',{}) %}{% if compiled %}<div class="metrics">{{ metric('Active searches',compiled.get('active_queries',0)) }}{{ metric('Markets',compiled.get('active_markets',[])|length) }}{{ metric('Sources',compiled.get('sources',[])|length) }}</div>{% endif %}{% for problem in value.get('problems',[]) %}<wa-callout variant="warning">{{ problem }}</wa-callout>{% endfor %}<p class="muted">Saved preferences are used by your next search and application.</p>{% endif %}
+{% elif endpoint == 'diary' %}
+  <p class="section-note">Achievements explain the change you made. Link them to repository evidence or other sources when available.</p>
+  {% for item in value.get('entries',[]) %}<article class="impact-entry"><div class="section-heading"><h3><a href="/ui/detail/diary?{{ urlencode({'kind':'note' if item.get('kind') == 'note' else 'record','id':item.id.split(':',1)[-1]}) }}" hx-get="/ui/detail/diary?{{ urlencode({'kind':'note' if item.get('kind') == 'note' else 'record','id':item.id.split(':',1)[-1]}) }}" hx-target="#detail-content" hx-select="unset" hx-swap="innerHTML" data-open-dialog>{{ item.title }}</a></h3><wa-badge variant="neutral">{{ item.get('kind','achievement')|label }}</wa-badge></div><p>{{ (item.get('summary') or item.get('impact') or item.get('text') or '')|truncate(400) }}</p><small><time data-time datetime="{{ item.get('recency') or item.get('created_at','') }}">{{ item.get('recency') or item.get('created_at','') }}</time></small></article>{% else %}{{ empty('Record a result you are proud of.','Add what you did and what improved. Your next application can draw on it.') }}{% endfor %}
+{% elif endpoint == 'workers' %}
+  {% include 'worker_history.html' %}
+{% elif endpoint == 'backups' %}
+  {% include 'backups.html' %}
+{% elif endpoint == 'learning/status' %}
+  {% include 'learning.html' %}
+{% elif endpoint == 'rlm/status' %}
+  {% include 'rlm.html' %}
+{% elif endpoint == 'providers' %}
+  {% include 'providers.html' %}
+{% elif endpoint == 'operations' %}
+  <p class="section-note">Recorded issues explain interrupted work. An earlier failure does not mean the service is still unavailable.</p>
+  {% for item in value.get('incidents',[]) %}<article class="activity-row"><span class="activity-dot failed"></span><div><div class="activity-title"><strong>{{ item.get('title') or item.get('component','Workspace')|label }}</strong><time data-time datetime="{{ item.get('at','') }}">{{ item.get('at','') }}</time></div><p class="row-description">{{ item.get('message') or item.get('reason') }}</p><small>Last recorded occurrence{% if item.get('occurrences') %} · {{ item.occurrences }} total occurrences{% endif %}</small>{% if item.get('action_href') %}<p class="next-action"><a href="{{ item.action_href }}">{{ item.get('action_label','Review settings') }}</a></p>{% endif %}</div><wa-badge variant="neutral">Recorded issue</wa-badge></article>{% else %}{{ empty('No recorded issues.','Interrupted operations will appear here with the reason and next action.') }}{% endfor %}
+{% elif endpoint == 'system' %}
+  {% include 'diagnostics.html' %}
+{% else %}
+  {% if value.get('error') %}<wa-callout variant="danger">{{ value.error }}</wa-callout>{% elif value.get('available') is sameas false %}<p class="quiet-empty">Waiting for the next worker report.</p>{% elif value.get('note') %}<p class="muted">{{ value.note }}</p>{% endif %}{{ diagnostics(value,'Technical details') }}
+{% endif %}
+{% if value.get('page_size') and value.get('total',0) > value.page_size %}<nav class="pagination" aria-label="Result pages">{% if value.page > 1 %}<wa-button href="/ui/{{ view }}?{{ urlencode(dict(q,page=value.page-1)) }}" variant="neutral" appearance="outlined">Previous</wa-button>{% endif %}<span>Page {{ value.page }}</span>{% if value.page * value.page_size < value.total %}<wa-button href="/ui/{{ view }}?{{ urlencode(dict(q,page=value.page+1)) }}" variant="neutral" appearance="outlined">Next</wa-button>{% endif %}</nav>{% endif %}
+{% for warning in value.get('warnings',[]) %}<wa-callout variant="warning">{{ 'Autopilot has no current worker report. Recent activity remains available.' if 'No fresh, matching Autopilot report' in warning else warning }}</wa-callout>{% endfor %}
+{% if collapsible %}</div></details>{% endif %}

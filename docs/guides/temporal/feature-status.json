@@ -1,0 +1,1475 @@
+{
+  "schema_version": 3,
+  "coverage_note": "Current semantic feature mapping validated against real worker registrations and hashed source. Architecture and runtime validation are recorded separately; registration alone does not certify external provider behavior.",
+  "features": [
+    {
+      "name": "Independent SearXNG/DDGS provider search",
+      "modules": [
+        "integrations/search_providers.py",
+        "orchestration/search_activities.py",
+        "orchestration/search_workflows.py",
+        "orchestration/search_store.py"
+      ],
+      "domain_entity": "search observation",
+      "inputs": "SearchRequest -> immutable request_id/observation_id",
+      "outputs": "SearchEvidence references; provider hit records",
+      "side_effects": "Read provider; persist immutable evidence",
+      "capability": "research",
+      "temporal_path": "SearchWorkflow -> independent provider child -> one search observation",
+      "queue": "applypilot.default.research",
+      "trigger": "Temporal CLI/dashboard command or applicable native Schedule; temporal search CLI",
+      "dashboard": "Existing Temporal status shows research queue; no dedicated search business panel",
+      "migration_status": "temporal-native",
+      "remaining_work": "Live provider behavior was not exhaustively exercised; see VALIDATION.json.",
+      "workflow": [
+        "applypilot.search.v1",
+        "applypilot.search_provider.v1"
+      ],
+      "activity": [
+        "applypilot.search_searxng.v1",
+        "applypilot.search_ddgs.v1"
+      ],
+      "persistence": "Business PostgreSQL records; immutable private inputs and receipts outside Workflow History",
+      "idempotency_identity": "observation_id + provider",
+      "source_verification": "Source module hashes and production SDK registrations are verified by tools/temporal/inventory.py. Provider validation scope is recorded separately in VALIDATION.json."
+    },
+    {
+      "name": "Company research and posting evidence",
+      "modules": [
+        "orchestration/posting_research_workflows.py",
+        "orchestration/company_job_domain.py",
+        "orchestration/posting_research_contracts.py"
+      ],
+      "domain_entity": "company/job",
+      "inputs": "Company or job reference, requested evidence fields",
+      "outputs": "Company evidence, posting suitability report",
+      "side_effects": "Web/model reads; business reports",
+      "capability": "maintenance research models discovery",
+      "temporal_path": "Company posting/report Workflow -> separate search/read/synthesis/publication Activities",
+      "queue": "applypilot.default.maintenance; applypilot.default.research; applypilot.default.models; applypilot.default.discovery",
+      "trigger": "Temporal CLI/dashboard command or applicable native Schedule; JobWorkflow / jobs schedule",
+      "dashboard": "Existing company/research views",
+      "migration_status": "temporal-native",
+      "remaining_work": "Live provider behavior was not exhaustively exercised; see VALIDATION.json.",
+      "workflow": [
+        "applypilot.company-posting.v1",
+        "applypilot.company_posting_research.v1",
+        "applypilot.company_report.v1",
+        "applypilot.company_signal_vacancy.v1"
+      ],
+      "activity": [
+        "applypilot.posting_research_prepare.v1",
+        "applypilot.posting_research_search.v1",
+        "applypilot.posting_research_read.v1",
+        "applypilot.posting_research_synthesize.v1",
+        "applypilot.posting_research_signal.v1",
+        "applypilot.posting_research_assess.v1",
+        "applypilot.posting_research_publish.v1"
+      ],
+      "persistence": "Business PostgreSQL records; immutable private inputs and receipts outside Workflow History",
+      "idempotency_identity": "posting/report identity + observed evidence content",
+      "source_verification": "Source module hashes and production SDK registrations are verified by tools/temporal/inventory.py. Provider validation scope is recorded separately in VALIDATION.json."
+    },
+    {
+      "name": "Source evidence cache and report archive",
+      "modules": [
+        "integrations/state.py",
+        "orchestration/store.py"
+      ],
+      "domain_entity": "evidence report",
+      "inputs": "cache key/target/report body",
+      "outputs": "Cached facts, saved report identity",
+      "side_effects": "PostgreSQL cache/report writes",
+      "capability": "external infrastructure",
+      "temporal_path": "Business evidence persistence called by Activities",
+      "queue": null,
+      "trigger": "Explicit source operations / deployment initialize",
+      "dashboard": "Existing source diagnostics",
+      "migration_status": "business-persistence",
+      "remaining_work": "",
+      "workflow": [],
+      "activity": [],
+      "persistence": "Business PostgreSQL records; immutable private inputs and receipts outside Workflow History",
+      "idempotency_identity": "content-derived input IDs and provider evidence keys",
+      "source_verification": "Source module hashes and production SDK registrations are verified by tools/temporal/inventory.py. Provider validation scope is recorded separately in VALIDATION.json."
+    },
+    {
+      "name": "Job source registry and provider synchronization",
+      "modules": [
+        "discovery/capabilities.py",
+        "discovery/freehire_registry.py",
+        "discovery/builtin.py",
+        "orchestration/source_page.py",
+        "orchestration/workflows.py"
+      ],
+      "domain_entity": "source/provider",
+      "inputs": "Configured provider and searches",
+      "outputs": "Provider tasks and registry entries",
+      "side_effects": "Provider metadata reads/writes",
+      "capability": "maintenance discovery",
+      "temporal_path": "DispatchWorkflow -> provider DiscoveryWorkflow -> one provider page -> receipt publication",
+      "queue": "applypilot.default.maintenance; applypilot.default.discovery",
+      "trigger": "Temporal CLI/dashboard command or applicable native Schedule; discover schedule",
+      "dashboard": "Discovery/source views",
+      "migration_status": "temporal-native",
+      "remaining_work": "Live provider behavior was not exhaustively exercised; see VALIDATION.json.",
+      "workflow": [
+        "applypilot.dispatch.v2",
+        "applypilot.discovery.v2"
+      ],
+      "activity": [
+        "applypilot.fetch_source_page.v1"
+      ],
+      "persistence": "Business PostgreSQL records; immutable private inputs and receipts outside Workflow History",
+      "idempotency_identity": "sweep + target + provider cursor; stable canonical job identity",
+      "source_verification": "Source module hashes and production SDK registrations are verified by tools/temporal/inventory.py. Provider validation scope is recorded separately in VALIDATION.json."
+    },
+    {
+      "name": "ATS discovery and employer vacancies",
+      "modules": [
+        "discovery/ats_adapter.py",
+        "discovery/ats_common.py",
+        "discovery/greenhouse.py",
+        "discovery/lever.py",
+        "discovery/ashby.py",
+        "discovery/workday.py",
+        "orchestration/source_page.py",
+        "orchestration/workflows.py"
+      ],
+      "domain_entity": "ATS/company/job",
+      "inputs": "Provider target/cursor",
+      "outputs": "DiscoveryPage and vacancy records",
+      "side_effects": "Read ATS; publish job records",
+      "capability": "maintenance discovery",
+      "temporal_path": "DispatchWorkflow -> provider DiscoveryWorkflow -> one provider page -> receipt publication",
+      "queue": "applypilot.default.maintenance; applypilot.default.discovery",
+      "trigger": "Temporal CLI/dashboard command or applicable native Schedule; discovery plan",
+      "dashboard": "Discovery/company views",
+      "migration_status": "temporal-native",
+      "remaining_work": "Live provider behavior was not exhaustively exercised; see VALIDATION.json.",
+      "workflow": [
+        "applypilot.dispatch.v2",
+        "applypilot.discovery.v2"
+      ],
+      "activity": [
+        "applypilot.fetch_source_page.v1"
+      ],
+      "persistence": "Business PostgreSQL records; immutable private inputs and receipts outside Workflow History",
+      "idempotency_identity": "sweep + target + provider cursor; stable canonical job identity",
+      "source_verification": "Source module hashes and production SDK registrations are verified by tools/temporal/inventory.py. Provider validation scope is recorded separately in VALIDATION.json."
+    },
+    {
+      "name": "Public job boards and aggregators",
+      "modules": [
+        "discovery/amazon.py",
+        "discovery/costco.py",
+        "discovery/hackernews.py",
+        "discovery/hiring_cafe.py",
+        "discovery/irishjobs.py",
+        "discovery/jobseek.py",
+        "discovery/jobspy.py",
+        "discovery/reed.py",
+        "discovery/remoteok.py",
+        "discovery/remotive.py",
+        "discovery/seek.py",
+        "discovery/ziprecruiter.py",
+        "orchestration/source_page.py",
+        "orchestration/workflows.py"
+      ],
+      "domain_entity": "source page/job",
+      "inputs": "Provider-specific task and cursor",
+      "outputs": "Normalized jobs and provider coverage",
+      "side_effects": "External page reads; job publication",
+      "capability": "maintenance discovery",
+      "temporal_path": "DispatchWorkflow -> provider DiscoveryWorkflow -> one provider page -> receipt publication",
+      "queue": "applypilot.default.maintenance; applypilot.default.discovery",
+      "trigger": "Temporal CLI/dashboard command or applicable native Schedule; discovery plan",
+      "dashboard": "Discovery/provider views",
+      "migration_status": "temporal-native",
+      "remaining_work": "Live provider behavior was not exhaustively exercised; see VALIDATION.json.",
+      "workflow": [
+        "applypilot.dispatch.v2",
+        "applypilot.discovery.v2"
+      ],
+      "activity": [
+        "applypilot.fetch_source_page.v1"
+      ],
+      "persistence": "Business PostgreSQL records; immutable private inputs and receipts outside Workflow History",
+      "idempotency_identity": "sweep + target + provider cursor; stable canonical job identity",
+      "source_verification": "Source module hashes and production SDK registrations are verified by tools/temporal/inventory.py. Provider validation scope is recorded separately in VALIDATION.json."
+    },
+    {
+      "name": "FreeHire, social, and web opportunity discovery",
+      "modules": [
+        "discovery/freehire.py",
+        "discovery/free_signals.py",
+        "discovery/linkedin_posts.py",
+        "discovery/twitter.py",
+        "discovery/web_search.py",
+        "discovery/social_queries.py",
+        "orchestration/source_activities.py",
+        "orchestration/source_page.py",
+        "orchestration/workflows.py"
+      ],
+      "domain_entity": "opportunity signal",
+      "inputs": "Intent, provider task, authorized source",
+      "outputs": "Signals and jobs",
+      "side_effects": "External reads; evidence publication",
+      "capability": "maintenance discovery",
+      "temporal_path": "DispatchWorkflow -> provider DiscoveryWorkflow -> one provider page -> receipt publication",
+      "queue": "applypilot.default.maintenance; applypilot.default.discovery",
+      "trigger": "Temporal CLI/dashboard command or applicable native Schedule; discovery plan",
+      "dashboard": "Source/discovery views",
+      "migration_status": "temporal-native",
+      "remaining_work": "Live provider behavior was not exhaustively exercised; see VALIDATION.json.",
+      "workflow": [
+        "applypilot.dispatch.v2",
+        "applypilot.discovery.v2"
+      ],
+      "activity": [
+        "applypilot.fetch_source_page.v1"
+      ],
+      "persistence": "Business PostgreSQL records; immutable private inputs and receipts outside Workflow History",
+      "idempotency_identity": "sweep + target + provider cursor; stable canonical job identity",
+      "source_verification": "Source module hashes and production SDK registrations are verified by tools/temporal/inventory.py. Provider validation scope is recorded separately in VALIDATION.json."
+    },
+    {
+      "name": "Listing normalization, matching and company resolution",
+      "modules": [
+        "discovery/normalization.py",
+        "discovery/matching.py",
+        "discovery/repository.py",
+        "discovery/url_normalize.py",
+        "orchestration/source_page.py",
+        "orchestration/workflows.py"
+      ],
+      "domain_entity": "job/company",
+      "inputs": "Raw listing and source context",
+      "outputs": "Canonical listing, match and publication result",
+      "side_effects": "Business persistence",
+      "capability": "maintenance discovery",
+      "temporal_path": "DispatchWorkflow -> provider DiscoveryWorkflow -> one provider page -> receipt publication",
+      "queue": "applypilot.default.maintenance; applypilot.default.discovery",
+      "trigger": "Temporal CLI/dashboard command or applicable native Schedule; Discovery page completion",
+      "dashboard": "Jobs/discovery views",
+      "migration_status": "temporal-native",
+      "remaining_work": "Live provider behavior was not exhaustively exercised; see VALIDATION.json.",
+      "workflow": [
+        "applypilot.dispatch.v2",
+        "applypilot.discovery.v2"
+      ],
+      "activity": [
+        "applypilot.fetch_source_page.v1"
+      ],
+      "persistence": "Business PostgreSQL records; immutable private inputs and receipts outside Workflow History",
+      "idempotency_identity": "sweep + target + provider cursor; stable canonical job identity",
+      "source_verification": "Source module hashes and production SDK registrations are verified by tools/temporal/inventory.py. Provider validation scope is recorded separately in VALIDATION.json."
+    },
+    {
+      "name": "Job description enrichment",
+      "modules": [
+        "orchestration/job_domain.py",
+        "enrichment/detail.py",
+        "enrichment/facts.py"
+      ],
+      "domain_entity": "job",
+      "inputs": "Job URL and posting context",
+      "outputs": "Observed description/application URL/facts",
+      "side_effects": "HTTP/browser reads; job update",
+      "capability": "preparation",
+      "temporal_path": "JobWorkflow -> enrich -> one job detail read",
+      "queue": "applypilot.default.preparation",
+      "trigger": "Temporal CLI/dashboard command or applicable native Schedule; Job phases",
+      "dashboard": "Enrichment/jobs views",
+      "migration_status": "temporal-native",
+      "remaining_work": "Live provider behavior was not exhaustively exercised; see VALIDATION.json.",
+      "workflow": [
+        "applypilot.job.v3"
+      ],
+      "activity": [
+        "applypilot.operation.v1"
+      ],
+      "persistence": "Business PostgreSQL records; immutable private inputs and receipts outside Workflow History",
+      "idempotency_identity": "stable job_id + stored business state",
+      "source_verification": "Source module hashes and production SDK registrations are verified by tools/temporal/inventory.py. Provider validation scope is recorded separately in VALIDATION.json."
+    },
+    {
+      "name": "Signals and signal research",
+      "modules": [
+        "signals/contracts.py",
+        "signals/service.py",
+        "orchestration/signal_activities.py",
+        "orchestration/signal_workflows.py",
+        "discovery/signal_cache.py"
+      ],
+      "domain_entity": "signal",
+      "inputs": "Discovered signal and intent",
+      "outputs": "Verified vacancy/evidence/coverage",
+      "side_effects": "Provider/model reads; signal persistence",
+      "capability": "discovery models",
+      "temporal_path": "Source observation -> SignalWorkflow -> extract -> publish",
+      "queue": "applypilot.default.discovery; applypilot.default.models",
+      "trigger": "Temporal CLI/dashboard command or applicable native Schedule; Captured source signal; temporal signal SIGNAL_ID",
+      "dashboard": "Signal/discovery views",
+      "migration_status": "temporal-native",
+      "remaining_work": "Live provider behavior was not exhaustively exercised; see VALIDATION.json.",
+      "workflow": [
+        "applypilot.discovery.v2",
+        "applypilot.signal.v1"
+      ],
+      "activity": [
+        "applypilot.fetch_source_page.v1",
+        "applypilot.extract_signal.v1",
+        "applypilot.publish_signal.v1"
+      ],
+      "persistence": "Business PostgreSQL records; immutable private inputs and receipts outside Workflow History",
+      "idempotency_identity": "signal + source revision + extractor",
+      "source_verification": "Source module hashes and production SDK registrations are verified by tools/temporal/inventory.py. Provider validation scope is recorded separately in VALIDATION.json."
+    },
+    {
+      "name": "Company discovery, ATS feeds, and profiles",
+      "modules": [
+        "orchestration/company_workflows.py",
+        "orchestration/company_domain.py",
+        "orchestration/company_crawl.py",
+        "orchestration/target_workflows.py",
+        "company_discovery/discovery.py",
+        "company_discovery/store.py"
+      ],
+      "domain_entity": "company",
+      "inputs": "Intent/company candidates/provider feeds",
+      "outputs": "Company profiles and sources",
+      "side_effects": "External reads; company/profile updates",
+      "capability": "maintenance research models discovery",
+      "temporal_path": "Company/target Workflows own link traversal, provider cursors and publication children",
+      "queue": "applypilot.default.maintenance; applypilot.default.research; applypilot.default.models; applypilot.default.discovery",
+      "trigger": "Temporal CLI/dashboard command or applicable native Schedule; company_discovery schedule",
+      "dashboard": "Company views",
+      "migration_status": "temporal-native",
+      "remaining_work": "Live provider behavior was not exhaustively exercised; see VALIDATION.json.",
+      "workflow": [
+        "applypilot.company_discovery.v1",
+        "applypilot.company_search.v1",
+        "applypilot.company_source.v1",
+        "applypilot.company_evidence.v1",
+        "applypilot.company_crawl.v1",
+        "applypilot.owner_target.v1"
+      ],
+      "activity": [
+        "applypilot.company_prepare.v1",
+        "applypilot.company_search.v1",
+        "applypilot.company_source_read.v1",
+        "applypilot.company_source_extract.v1",
+        "applypilot.company_source_publish.v1",
+        "applypilot.company_read.v1",
+        "applypilot.company_assess.v1",
+        "applypilot.company_vacancy.v1",
+        "applypilot.company_publish.v1",
+        "applypilot.company_crawl_prepare.v1",
+        "applypilot.company_crawl_page.v1",
+        "applypilot.company_crawl_publish.v1"
+      ],
+      "persistence": "Business PostgreSQL records; immutable private inputs and receipts outside Workflow History",
+      "idempotency_identity": "company/source/target identity + sweep + evidence reference",
+      "source_verification": "Source module hashes and production SDK registrations are verified by tools/temporal/inventory.py. Provider validation scope is recorded separately in VALIDATION.json."
+    },
+    {
+      "name": "Hiring predictions and company analytics",
+      "modules": [
+        "orchestration/prediction_workflows.py",
+        "orchestration/company_prediction.py",
+        "orchestration/prediction_contracts.py",
+        "company_discovery/predictive_store.py"
+      ],
+      "domain_entity": "company/hiring signal",
+      "inputs": "Observed hiring/company evidence",
+      "outputs": "Predictions and analytics",
+      "side_effects": "Evidence reads, model calls, reports",
+      "capability": "maintenance research models discovery",
+      "temporal_path": "Prediction Workflow -> native evidence traversal -> analysis/audit/publication",
+      "queue": "applypilot.default.maintenance; applypilot.default.research; applypilot.default.models; applypilot.default.discovery",
+      "trigger": "Temporal CLI/dashboard command or applicable native Schedule; Company discovery",
+      "dashboard": "Company predictive views",
+      "migration_status": "temporal-native",
+      "remaining_work": "Live provider behavior was not exhaustively exercised; see VALIDATION.json.",
+      "workflow": [
+        "applypilot.company_prediction.v1",
+        "applypilot.company_draft_selection.v1",
+        "applypilot.company_prediction_draft.v1"
+      ],
+      "activity": [
+        "applypilot.prediction_prepare.v1",
+        "applypilot.prediction_search.v1",
+        "applypilot.prediction_read.v1",
+        "applypilot.prediction_analyze.v1",
+        "applypilot.prediction_audit.v1",
+        "applypilot.prediction_publish.v1",
+        "applypilot.prediction_draft.v1",
+        "applypilot.prediction_vacancy.v1",
+        "applypilot.prediction_select.v1"
+      ],
+      "persistence": "Business PostgreSQL records; immutable private inputs and receipts outside Workflow History",
+      "idempotency_identity": "company + prediction input/evidence version",
+      "source_verification": "Source module hashes and production SDK registrations are verified by tools/temporal/inventory.py. Provider validation scope is recorded separately in VALIDATION.json."
+    },
+    {
+      "name": "Fit scoring and grounded requirement matching",
+      "modules": [
+        "orchestration/job_domain.py",
+        "scoring/scorer.py"
+      ],
+      "domain_entity": "job/profile",
+      "inputs": "Job, resume, profile and career evidence",
+      "outputs": "Fit score, evidence-linked requirements",
+      "side_effects": "Model request; score persistence",
+      "capability": "preparation",
+      "temporal_path": "JobWorkflow -> score -> one grounded scoring operation",
+      "queue": "applypilot.default.preparation",
+      "trigger": "Temporal CLI/dashboard command or applicable native Schedule; Job phases",
+      "dashboard": "Scoring/jobs views",
+      "migration_status": "temporal-native",
+      "remaining_work": "Live provider behavior was not exhaustively exercised; see VALIDATION.json.",
+      "workflow": [
+        "applypilot.job.v3"
+      ],
+      "activity": [
+        "applypilot.operation.v1"
+      ],
+      "persistence": "Business PostgreSQL records; immutable private inputs and receipts outside Workflow History",
+      "idempotency_identity": "job_id + current profile and scoring evidence",
+      "source_verification": "Source module hashes and production SDK registrations are verified by tools/temporal/inventory.py. Provider validation scope is recorded separately in VALIDATION.json."
+    },
+    {
+      "name": "Compensation research and salary comparison",
+      "modules": [
+        "scoring/market_salary.py",
+        "scoring/salary_service.py",
+        "compensation.py",
+        "orchestration/integration_domain.py"
+      ],
+      "domain_entity": "job/compensation evidence",
+      "inputs": "Job/region/currency evidence",
+      "outputs": "Sourced salary comparison",
+      "side_effects": "External/model reads; salary fields",
+      "capability": "reporting",
+      "temporal_path": "ReportWorkflow -> generate_report -> one persisted report request",
+      "queue": "applypilot.default.reporting",
+      "trigger": "Temporal CLI/dashboard command or applicable native Schedule; Qualified score / career operation",
+      "dashboard": "Salary/career views",
+      "migration_status": "temporal-native",
+      "remaining_work": "Live provider behavior was not exhaustively exercised; see VALIDATION.json.",
+      "workflow": [
+        "applypilot.report.v1",
+        "applypilot.reports.v1"
+      ],
+      "activity": [
+        "applypilot.integration.generate_report.v1"
+      ],
+      "persistence": "Business PostgreSQL records; immutable private inputs and receipts outside Workflow History",
+      "idempotency_identity": "report_id; immutable report request",
+      "source_verification": "Source module hashes and production SDK registrations are verified by tools/temporal/inventory.py. Provider validation scope is recorded separately in VALIDATION.json."
+    },
+    {
+      "name": "Resume tailoring and approval manifests",
+      "modules": [
+        "scoring/tailor.py",
+        "scoring/artifact_store.py",
+        "scoring/document_contract.py",
+        "documents/service.py",
+        "orchestration/document_workflows.py"
+      ],
+      "domain_entity": "document/job",
+      "inputs": "Job, resume/profile and grounded evidence",
+      "outputs": "Tailored source and approval manifest",
+      "side_effects": "Model calls; immutable document writes",
+      "capability": "documents preparation",
+      "temporal_path": "Job document child -> approved generation -> immutable rendered artifact",
+      "queue": "applypilot.default.documents; applypilot.default.preparation",
+      "trigger": "Temporal CLI/dashboard command or applicable native Schedule; Job phases",
+      "dashboard": "Document/job views",
+      "migration_status": "temporal-native",
+      "remaining_work": "Cross-host artifact storage must be mounted consistently; live renderers/providers were not all exercised.",
+      "workflow": [
+        "applypilot.job.v3",
+        "applypilot.job_document.v1",
+        "applypilot.document.v1"
+      ],
+      "activity": [
+        "applypilot.prepare_document.v1",
+        "applypilot.render_document.v1"
+      ],
+      "persistence": "Business PostgreSQL records; immutable private inputs and receipts outside Workflow History; shared artifact filesystem",
+      "idempotency_identity": "document_id + format + approved content-derived artifact_id",
+      "source_verification": "Source module hashes and production SDK registrations are verified by tools/temporal/inventory.py. Provider validation scope is recorded separately in VALIDATION.json."
+    },
+    {
+      "name": "Cover-letter generation and validation",
+      "modules": [
+        "scoring/cover_letter.py",
+        "scoring/validator.py",
+        "documents/service.py",
+        "orchestration/document_workflows.py"
+      ],
+      "domain_entity": "document/job",
+      "inputs": "Job, profile and evidence",
+      "outputs": "Approved cover source and manifest",
+      "side_effects": "Model call; source file writes",
+      "capability": "documents preparation",
+      "temporal_path": "Job document child -> approved generation -> immutable rendered artifact",
+      "queue": "applypilot.default.documents; applypilot.default.preparation",
+      "trigger": "Temporal CLI/dashboard command or applicable native Schedule; Job phases",
+      "dashboard": "Document/job views",
+      "migration_status": "temporal-native",
+      "remaining_work": "Cross-host artifact storage must be mounted consistently; live renderers/providers were not all exercised.",
+      "workflow": [
+        "applypilot.job.v3",
+        "applypilot.job_document.v1",
+        "applypilot.document.v1"
+      ],
+      "activity": [
+        "applypilot.prepare_document.v1",
+        "applypilot.render_document.v1"
+      ],
+      "persistence": "Business PostgreSQL records; immutable private inputs and receipts outside Workflow History; shared artifact filesystem",
+      "idempotency_identity": "document_id + format + approved content-derived artifact_id",
+      "source_verification": "Source module hashes and production SDK registrations are verified by tools/temporal/inventory.py. Provider validation scope is recorded separately in VALIDATION.json."
+    },
+    {
+      "name": "PDF, DOCX and HTML document rendering",
+      "modules": [
+        "scoring/pdf.py",
+        "scoring/latex.py",
+        "scoring/document_basic.py",
+        "scoring/resume_blocks.py",
+        "documents/service.py",
+        "documents/store.py",
+        "documents/artifacts.py",
+        "orchestration/document_workflows.py",
+        "orchestration/document_activities.py"
+      ],
+      "domain_entity": "document",
+      "inputs": "Approved document source and format",
+      "outputs": "Rendered PDF/DOCX/HTML",
+      "side_effects": "Renderer/browser/filesystem operations",
+      "capability": "documents preparation",
+      "temporal_path": "Job document child -> approved generation -> immutable rendered artifact",
+      "queue": "applypilot.default.documents; applypilot.default.preparation",
+      "trigger": "Temporal CLI/dashboard command or applicable native Schedule; Job phases",
+      "dashboard": "Document/job views",
+      "migration_status": "temporal-native",
+      "remaining_work": "Cross-host artifact storage must be mounted consistently; live renderers/providers were not all exercised.",
+      "workflow": [
+        "applypilot.job.v3",
+        "applypilot.job_document.v1",
+        "applypilot.document.v1"
+      ],
+      "activity": [
+        "applypilot.prepare_document.v1",
+        "applypilot.render_document.v1"
+      ],
+      "persistence": "Business PostgreSQL records; immutable private inputs and receipts outside Workflow History; shared artifact filesystem",
+      "idempotency_identity": "document_id + format + approved content-derived artifact_id",
+      "source_verification": "Source module hashes and production SDK registrations are verified by tools/temporal/inventory.py. Provider validation scope is recorded separately in VALIDATION.json."
+    },
+    {
+      "name": "Interview brief and application preparation",
+      "modules": [
+        "orchestration/job_domain.py",
+        "career_ops/brief_operation.py",
+        "orchestration/integration_domain.py"
+      ],
+      "domain_entity": "brief/job",
+      "inputs": "Job and supported candidate claims",
+      "outputs": "Grounded brief/defense pack",
+      "side_effects": "Model and artifact writes",
+      "capability": "preparation reporting",
+      "temporal_path": "Job brief or independent report -> one grounded brief operation",
+      "queue": "applypilot.default.preparation; applypilot.default.reporting",
+      "trigger": "Temporal CLI/dashboard command or applicable native Schedule; Job phases",
+      "dashboard": "Brief/job views",
+      "migration_status": "temporal-native",
+      "remaining_work": "Live provider behavior was not exhaustively exercised; see VALIDATION.json.",
+      "workflow": [
+        "applypilot.job.v3",
+        "applypilot.report.v1"
+      ],
+      "activity": [
+        "applypilot.operation.v1",
+        "applypilot.integration.generate_report.v1"
+      ],
+      "persistence": "Business PostgreSQL records; immutable private inputs and receipts outside Workflow History",
+      "idempotency_identity": "job_id + report_id",
+      "source_verification": "Source module hashes and production SDK registrations are verified by tools/temporal/inventory.py. Provider validation scope is recorded separately in VALIDATION.json."
+    },
+    {
+      "name": "Browser application submission",
+      "modules": [
+        "apply/launcher.py",
+        "apply/orchestrator.py",
+        "apply/agent_sdk.py",
+        "apply/browseros_mcp.py",
+        "apply/guard.py",
+        "apply/service.py",
+        "apply/attempt_lifecycle.py",
+        "orchestration/account_workflows.py"
+      ],
+      "domain_entity": "application",
+      "inputs": "Job/application identity, approved artifacts and authorized answers",
+      "outputs": "Provider submission evidence or explicit unknown outcome",
+      "side_effects": "Irreversible external submission possible",
+      "capability": "applications maintenance",
+      "temporal_path": "ApplicationWorkflow -> prepare/submit/evidence; per-account native pacing and restriction signals",
+      "queue": "applypilot.default.applications; applypilot.default.maintenance",
+      "trigger": "Temporal CLI/dashboard command or applicable native Schedule; Explicit application request / enabled jobs schedule",
+      "dashboard": "Applications dashboard",
+      "migration_status": "temporal-native",
+      "remaining_work": "No live applications or email sent. Ambiguous external effects remain in evidence reconciliation until observable; retries never blindly resend.",
+      "workflow": [
+        "applypilot.application.v2",
+        "applypilot.linkedin-applications.v1"
+      ],
+      "activity": [
+        "applypilot.operation.v1"
+      ],
+      "persistence": "Business PostgreSQL records; immutable private inputs and receipts outside Workflow History; owned browser attempt evidence",
+      "idempotency_identity": "application_id + operation_id + attempt_id + provider submission/message receipt",
+      "source_verification": "Source module hashes and production SDK registrations are verified by tools/temporal/inventory.py. Provider validation scope is recorded separately in VALIDATION.json."
+    },
+    {
+      "name": "Email applications and submission evidence",
+      "modules": [
+        "apply/email_application.py",
+        "apply/email_preflight.py",
+        "apply/submission_evidence.py",
+        "apply/service.py",
+        "apply/attempt_lifecycle.py",
+        "orchestration/account_workflows.py"
+      ],
+      "domain_entity": "application/message",
+      "inputs": "Application, recipient, approved content and attachment",
+      "outputs": "Provider message/submission receipt",
+      "side_effects": "Irreversible email send possible",
+      "capability": "applications maintenance",
+      "temporal_path": "ApplicationWorkflow -> prepare/submit/evidence; per-account native pacing and restriction signals",
+      "queue": "applypilot.default.applications; applypilot.default.maintenance",
+      "trigger": "Temporal CLI/dashboard command or applicable native Schedule; Authorized application route",
+      "dashboard": "Application/outcome views",
+      "migration_status": "temporal-native",
+      "remaining_work": "No live applications or email sent. Ambiguous external effects remain in evidence reconciliation until observable; retries never blindly resend.",
+      "workflow": [
+        "applypilot.application.v2",
+        "applypilot.linkedin-applications.v1"
+      ],
+      "activity": [
+        "applypilot.operation.v1"
+      ],
+      "persistence": "Business PostgreSQL records; immutable private inputs and receipts outside Workflow History; owned browser attempt evidence",
+      "idempotency_identity": "application_id + operation_id + attempt_id + provider submission/message receipt",
+      "source_verification": "Source module hashes and production SDK registrations are verified by tools/temporal/inventory.py. Provider validation scope is recorded separately in VALIDATION.json."
+    },
+    {
+      "name": "Application outcome observation and reconciliation",
+      "modules": [
+        "apply/submission_evidence.py",
+        "apply/guard.py",
+        "recovery.py",
+        "apply/service.py",
+        "apply/attempt_lifecycle.py",
+        "orchestration/account_workflows.py"
+      ],
+      "domain_entity": "application evidence",
+      "inputs": "Existing attempt and provider evidence",
+      "outputs": "Confirmed submission, confirmed absence, or unknown",
+      "side_effects": "Read receipts; business outcome update",
+      "capability": "applications maintenance",
+      "temporal_path": "ApplicationWorkflow -> prepare/submit/evidence; per-account native pacing and restriction signals",
+      "queue": "applypilot.default.applications; applypilot.default.maintenance",
+      "trigger": "Temporal CLI/dashboard command or applicable native Schedule; Application durable observation loop",
+      "dashboard": "Application/evidence views",
+      "migration_status": "temporal-native",
+      "remaining_work": "No live applications or email sent. Ambiguous external effects remain in evidence reconciliation until observable; retries never blindly resend.",
+      "workflow": [
+        "applypilot.application.v2",
+        "applypilot.linkedin-applications.v1"
+      ],
+      "activity": [
+        "applypilot.operation.v1"
+      ],
+      "persistence": "Business PostgreSQL records; immutable private inputs and receipts outside Workflow History; owned browser attempt evidence",
+      "idempotency_identity": "application_id + operation_id + attempt_id + provider submission/message receipt",
+      "source_verification": "Source module hashes and production SDK registrations are verified by tools/temporal/inventory.py. Provider validation scope is recorded separately in VALIDATION.json."
+    },
+    {
+      "name": "Authenticated browser sessions and tool safety",
+      "modules": [
+        "apply/runtime.py",
+        "apply/browseros_mcp.py",
+        "apply/cloudflare_tool.py",
+        "apply/provider_observations.py",
+        "browser/cloudflare.py",
+        "browser/backends.py"
+      ],
+      "domain_entity": "browser session",
+      "inputs": "Authorized isolated profile and semantic operation",
+      "outputs": "Observed browser result",
+      "side_effects": "Browser/network/session files",
+      "capability": "applications",
+      "temporal_path": "Application Activity uses an owned browser page and finite challenge adapter",
+      "queue": "applypilot.default.applications",
+      "trigger": "Temporal CLI/dashboard command or applicable native Schedule; Application/network operation",
+      "dashboard": "Browser health views",
+      "migration_status": "temporal-native",
+      "remaining_work": "FlareSolverr example.com read validated; not a guarantee for every challenge or live account.",
+      "workflow": [
+        "applypilot.application.v2"
+      ],
+      "activity": [
+        "applypilot.operation.v1"
+      ],
+      "persistence": "Business PostgreSQL records; immutable private inputs and receipts outside Workflow History; worker-specific authenticated profiles and private browser evidence",
+      "idempotency_identity": "attempt_id + owned page/session identity",
+      "source_verification": "Source module hashes and production SDK registrations are verified by tools/temporal/inventory.py. Provider validation scope is recorded separately in VALIDATION.json."
+    },
+    {
+      "name": "Mailbox synchronization and reply classification",
+      "modules": [
+        "orchestration/mailbox_workflows.py",
+        "orchestration/mailbox_domain.py",
+        "tracking/feedback_store.py"
+      ],
+      "domain_entity": "mailbox/message/application response",
+      "inputs": "Authorized inbox and message/page identity",
+      "outputs": "Classified response and application outcome",
+      "side_effects": "Mailbox read; feedback persistence",
+      "capability": "email documents models learning maintenance",
+      "temporal_path": "Mailbox Workflow -> cursor window -> message child -> classify/publish/observe",
+      "queue": "applypilot.default.email; applypilot.default.documents; applypilot.default.models; applypilot.default.learning; applypilot.default.maintenance",
+      "trigger": "Temporal CLI/dashboard command or applicable native Schedule; tracking schedule",
+      "dashboard": "Mail/application outcome views",
+      "migration_status": "temporal-native",
+      "remaining_work": "Live provider behavior was not exhaustively exercised; see VALIDATION.json.",
+      "workflow": [
+        "applypilot.mailbox-sync.v1",
+        "applypilot.mailbox-window.v1",
+        "applypilot.mailbox-backlog.v1",
+        "applypilot.mailbox-message.v1",
+        "applypilot.mailbox-observation.v1"
+      ],
+      "activity": [
+        "applypilot.operation.v1"
+      ],
+      "persistence": "Business PostgreSQL records; immutable private inputs and receipts outside Workflow History",
+      "idempotency_identity": "account + provider message ID + cursor window",
+      "source_verification": "Source module hashes and production SDK registrations are verified by tools/temporal/inventory.py. Provider validation scope is recorded separately in VALIDATION.json."
+    },
+    {
+      "name": "People discovery, relationship graph and referrals",
+      "modules": [
+        "referrals/discovery.py",
+        "referrals/identity.py",
+        "referrals/graph.py",
+        "referrals/ranking.py",
+        "referrals/planner.py",
+        "orchestration/integration_workflows.py",
+        "orchestration/integration_domain.py",
+        "orchestration/utility_domain.py",
+        "orchestration/utility_workflows.py",
+        "referrals/cli.py"
+      ],
+      "domain_entity": "person/relationship/referral",
+      "inputs": "Company/job/people evidence",
+      "outputs": "Contact identities, ranked paths, referral plan",
+      "side_effects": "External reads; relationship persistence",
+      "capability": "network models",
+      "temporal_path": "Relationship Workflow -> distinct person/research/referral semantic Activities; explicit referral source, draft and receipt requests use named Utility Activities",
+      "queue": "applypilot.default.network; applypilot.default.models",
+      "trigger": "Temporal CLI/dashboard command or applicable native Schedule; referrals schedule",
+      "dashboard": "Networking/referral views",
+      "migration_status": "temporal-native",
+      "remaining_work": "Live provider behavior was not exhaustively exercised; see VALIDATION.json.",
+      "workflow": [
+        "applypilot.networking.v1",
+        "applypilot.networking-relationship.v1",
+        "applypilot.network-connections.v1",
+        "applypilot.utility.v1"
+      ],
+      "activity": [
+        "applypilot.integration.relationship_state.v1",
+        "applypilot.integration.discover_person.v1",
+        "applypilot.integration.identify_hiring_manager.v1",
+        "applypilot.integration.identify_employee.v1",
+        "applypilot.integration.research_person.v1",
+        "applypilot.integration.identify_relationship_path.v1",
+        "applypilot.integration.update_relationship.v1",
+        "applypilot.integration.prepare_referral.v1",
+        "applypilot.integration.draft_outreach.v1",
+        "applypilot.integration.network_connections_page.v1",
+        "applypilot.utility.referral_discovery.v1",
+        "applypilot.utility.github_person.v1"
+      ],
+      "persistence": "Business PostgreSQL records; immutable private inputs and receipts outside Workflow History",
+      "idempotency_identity": "person_id + relationship/case_id + provider identity",
+      "source_verification": "Source module hashes and production SDK registrations are verified by tools/temporal/inventory.py. Provider validation scope is recorded separately in VALIDATION.json."
+    },
+    {
+      "name": "Networking research and preparation",
+      "modules": [
+        "unattended/research.py",
+        "unattended/dispatcher.py",
+        "orchestration/network.py",
+        "orchestration/integration_workflows.py",
+        "orchestration/integration_domain.py",
+        "orchestration/utility_workflows.py",
+        "orchestration/referral_preparation.py",
+        "referrals/planner.py",
+        "referrals/cli.py"
+      ],
+      "domain_entity": "person/relationship",
+      "inputs": "Profile, referral cases and evidence",
+      "outputs": "Researched contact/outreach draft",
+      "side_effects": "External/model reads; contact/draft writes",
+      "capability": "network models maintenance",
+      "temporal_path": "Relationship Workflow -> distinct person/research/referral semantic Activities; owner plan/prepare -> selection -> per-case draft -> model revision -> aggregate, with Continue-As-New",
+      "queue": "applypilot.default.network; applypilot.default.models; applypilot.default.maintenance",
+      "trigger": "Temporal CLI/dashboard command or applicable native Schedule; network_prepare/network_research schedules",
+      "dashboard": "Networking views",
+      "migration_status": "temporal-native",
+      "remaining_work": "Live provider behavior was not exhaustively exercised; see VALIDATION.json.",
+      "workflow": [
+        "applypilot.networking.v1",
+        "applypilot.networking-relationship.v1",
+        "applypilot.network-connections.v1",
+        "applypilot.utility.v1"
+      ],
+      "activity": [
+        "applypilot.integration.relationship_state.v1",
+        "applypilot.integration.discover_person.v1",
+        "applypilot.integration.identify_hiring_manager.v1",
+        "applypilot.integration.identify_employee.v1",
+        "applypilot.integration.research_person.v1",
+        "applypilot.integration.identify_relationship_path.v1",
+        "applypilot.integration.update_relationship.v1",
+        "applypilot.integration.prepare_referral.v1",
+        "applypilot.integration.draft_outreach.v1",
+        "applypilot.integration.network_connections_page.v1",
+        "applypilot.utility.referral_inventory.v1",
+        "applypilot.utility.referral_case_prepare.v1",
+        "applypilot.utility.referral_case_revise.v1",
+        "applypilot.utility.referral_prepare_finish.v1"
+      ],
+      "persistence": "Business PostgreSQL records; immutable private inputs and receipts outside Workflow History",
+      "idempotency_identity": "person_id + relationship/case_id + provider identity",
+      "source_verification": "Source module hashes and production SDK registrations are verified by tools/temporal/inventory.py. Provider validation scope is recorded separately in VALIDATION.json."
+    },
+    {
+      "name": "Email/LinkedIn outreach and follow-ups",
+      "modules": [
+        "orchestration/integration_workflows.py",
+        "orchestration/integration_domain.py",
+        "referrals/outreach.py",
+        "referrals/store.py",
+        "unattended/conversations.py",
+        "orchestration/utility_domain.py",
+        "orchestration/utility_workflows.py",
+        "referrals/discovery.py",
+        "referrals/cli.py"
+      ],
+      "domain_entity": "outreach/message/relationship",
+      "inputs": "Authorized recipient, approved message, conversation state",
+      "outputs": "Delivery receipt/reply/relationship update",
+      "side_effects": "Irreversible message or connection send possible",
+      "capability": "network email social models",
+      "temporal_path": "Outreach Workflow -> native account actor/timer -> one send or receipt observation; explicit referral source, draft and receipt requests use named Utility Activities",
+      "queue": "applypilot.default.network; applypilot.default.email; applypilot.default.social; applypilot.default.models",
+      "trigger": "Temporal CLI/dashboard command or applicable native Schedule; network_delivery schedule",
+      "dashboard": "Outreach/network views",
+      "migration_status": "temporal-native",
+      "remaining_work": "No live email, LinkedIn action, or follow-up sent; provider uncertainty preserves duplicate-send protection.",
+      "workflow": [
+        "applypilot.outreach.v1",
+        "applypilot.outreach-account.v1",
+        "applypilot.utility.v1"
+      ],
+      "activity": [
+        "applypilot.integration.prepare_outreach.v1",
+        "applypilot.integration.account_send_policy.v1",
+        "applypilot.integration.send_email.v1",
+        "applypilot.integration.send_social.v1",
+        "applypilot.integration.observe_response.v1",
+        "applypilot.integration.observe_email.v1",
+        "applypilot.integration.follow_up.v1",
+        "applypilot.utility.referral_revise.v1",
+        "applypilot.utility.referral_reconcile.v1"
+      ],
+      "persistence": "Business PostgreSQL records; immutable private inputs and receipts outside Workflow History",
+      "idempotency_identity": "outreach_id + account_id + provider message/thread receipt",
+      "source_verification": "Source module hashes and production SDK registrations are verified by tools/temporal/inventory.py. Provider validation scope is recorded separately in VALIDATION.json."
+    },
+    {
+      "name": "XActions, X readers and LinkedIn source integrations",
+      "modules": [
+        "integrations/social.py",
+        "integrations/social_actions.py",
+        "integrations/mcp.py",
+        "orchestration/integration_workflows.py",
+        "orchestration/integration_domain.py"
+      ],
+      "domain_entity": "social evidence",
+      "inputs": "Authorized account and read operation",
+      "outputs": "Profile/posts/timeline/network evidence",
+      "side_effects": "Read-only external browser/MCP work",
+      "capability": "social models network",
+      "temporal_path": "Social/professional action Workflow -> external XActions/LinkedIn adapter -> provider receipt",
+      "queue": "applypilot.default.social; applypilot.default.models; applypilot.default.network",
+      "trigger": "Temporal CLI/dashboard command or applicable native Schedule; Explicit source commands and discovery",
+      "dashboard": "Connections/source views",
+      "migration_status": "temporal-native",
+      "remaining_work": "External adapter requires configured supported tools; no live social actions sent.",
+      "workflow": [
+        "applypilot.social.v1",
+        "applypilot.professional-action.v1",
+        "applypilot.outreach-account.v1"
+      ],
+      "activity": [
+        "applypilot.integration.social_inventory.v1",
+        "applypilot.integration.discover_social_signal.v1",
+        "applypilot.integration.research_author.v1",
+        "applypilot.integration.draft_response.v1",
+        "applypilot.integration.professional_send_policy.v1",
+        "applypilot.integration.publish_response.v1",
+        "applypilot.integration.follow_account.v1",
+        "applypilot.integration.send_message.v1",
+        "applypilot.integration.send_connection.v1",
+        "applypilot.integration.observe_reply.v1"
+      ],
+      "persistence": "Business PostgreSQL records; immutable private inputs and receipts outside Workflow History",
+      "idempotency_identity": "operation_id + approved input hash + provider resource ID",
+      "source_verification": "Source module hashes and production SDK registrations are verified by tools/temporal/inventory.py. Provider validation scope is recorded separately in VALIDATION.json."
+    },
+    {
+      "name": "Career profile, evidence corpus and portfolio improvements",
+      "modules": [
+        "career/corpus.py",
+        "career/projection.py",
+        "career/matching.py",
+        "onboarding/portfolio.py",
+        "onboarding/planning.py",
+        "evidence/github.py",
+        "orchestration/integration_domain.py"
+      ],
+      "domain_entity": "career profile/evidence",
+      "inputs": "Resume/profile/GitHub evidence",
+      "outputs": "Profile, gaps, grounded improvement proposals",
+      "side_effects": "External reads and business evidence updates",
+      "capability": "reporting",
+      "temporal_path": "ReportWorkflow -> generate_report -> one persisted report request",
+      "queue": "applypilot.default.reporting",
+      "trigger": "Temporal CLI/dashboard command or applicable native Schedule; Onboarding/career commands",
+      "dashboard": "Career/onboarding views",
+      "migration_status": "temporal-native",
+      "remaining_work": "Live provider behavior was not exhaustively exercised; see VALIDATION.json.",
+      "workflow": [
+        "applypilot.report.v1",
+        "applypilot.reports.v1"
+      ],
+      "activity": [
+        "applypilot.integration.generate_report.v1"
+      ],
+      "persistence": "Business PostgreSQL records; immutable private inputs and receipts outside Workflow History",
+      "idempotency_identity": "report_id; immutable report request",
+      "source_verification": "Source module hashes and production SDK registrations are verified by tools/temporal/inventory.py. Provider validation scope is recorded separately in VALIDATION.json."
+    },
+    {
+      "name": "Interview planning, practice, debrief and offer review",
+      "modules": [
+        "career_ops/service.py",
+        "career_ops/schemas.py",
+        "career_ops/context.py",
+        "career_ops/store.py",
+        "career/interview.py",
+        "orchestration/integration_domain.py"
+      ],
+      "domain_entity": "career report/interview",
+      "inputs": "Mode-specific notes, job/profile and evidence",
+      "outputs": "Validated reports and practice sessions",
+      "side_effects": "Model calls; reports/session updates",
+      "capability": "reporting",
+      "temporal_path": "ReportWorkflow -> generate_report -> one persisted report request",
+      "queue": "applypilot.default.reporting",
+      "trigger": "Temporal CLI/dashboard command or applicable native Schedule; career_ops schedule and manual commands",
+      "dashboard": "Career/interview views",
+      "migration_status": "temporal-native",
+      "remaining_work": "Live provider behavior was not exhaustively exercised; see VALIDATION.json.",
+      "workflow": [
+        "applypilot.report.v1",
+        "applypilot.reports.v1"
+      ],
+      "activity": [
+        "applypilot.integration.generate_report.v1"
+      ],
+      "persistence": "Business PostgreSQL records; immutable private inputs and receipts outside Workflow History",
+      "idempotency_identity": "report_id; immutable report request",
+      "source_verification": "Source module hashes and production SDK registrations are verified by tools/temporal/inventory.py. Provider validation scope is recorded separately in VALIDATION.json."
+    },
+    {
+      "name": "Claim ledger, impact drafting, defense and audit artifacts",
+      "modules": [
+        "orchestration/utility_domain.py",
+        "orchestration/utility_workflows.py",
+        "impact/draft.py",
+        "impact/defense.py",
+        "evidence/cli.py"
+      ],
+      "domain_entity": "claim/evidence/artifact",
+      "inputs": "Supported candidate evidence and draft request",
+      "outputs": "Claim-linked drafts, defense and audit artifacts",
+      "side_effects": "Model and filesystem/business writes",
+      "capability": "models",
+      "temporal_path": "UtilityWorkflow -> one owner-requested evidence/impact operation",
+      "queue": "applypilot.default.models",
+      "trigger": "Temporal CLI/dashboard command or applicable native Schedule; Impact/career commands",
+      "dashboard": "Evidence/impact views",
+      "migration_status": "temporal-native",
+      "remaining_work": "Live provider behavior was not exhaustively exercised; see VALIDATION.json.",
+      "workflow": [
+        "applypilot.utility.v1"
+      ],
+      "activity": [
+        "applypilot.utility.impact_source_draft.v1",
+        "applypilot.utility.impact_bundle_draft.v1",
+        "applypilot.utility.impact_brief.v1",
+        "applypilot.utility.impact_dedup.v1",
+        "applypilot.utility.impact_remeasure.v1",
+        "applypilot.utility.impact_reconcile.v1",
+        "applypilot.utility.evidence_prune.v1"
+      ],
+      "persistence": "Business PostgreSQL records; immutable private inputs and receipts outside Workflow History; impact/diary artifacts",
+      "idempotency_identity": "immutable request reference + phase + sequence",
+      "source_verification": "Source module hashes and production SDK registrations are verified by tools/temporal/inventory.py. Provider validation scope is recorded separately in VALIDATION.json."
+    },
+    {
+      "name": "DSPy program evaluation and improvement",
+      "modules": [
+        "orchestration/learning_workflows.py",
+        "orchestration/learning_domain.py",
+        "reasoning/learning_compile.py",
+        "reasoning/learning_store.py",
+        "reasoning/optimizers.py",
+        "reasoning/policies.py"
+      ],
+      "domain_entity": "learning run/program",
+      "inputs": "Training/validation evidence, metric and objective",
+      "outputs": "Candidate/champion program and evaluation report",
+      "side_effects": "Model use; learning artifacts/promotion writes",
+      "capability": "learning",
+      "temporal_path": "Collect -> build dataset -> evaluate current -> public DSPy optimizer -> evaluate candidate -> promotion checks",
+      "queue": "applypilot.default.learning",
+      "trigger": "Temporal CLI/dashboard command or applicable native Schedule; learning schedule",
+      "dashboard": "Learning/program views",
+      "migration_status": "temporal-native",
+      "remaining_work": "Full paid/live optimizer campaigns were not run; promotion and dataset checks remain active.",
+      "workflow": [
+        "applypilot.learning.v1",
+        "applypilot.learning-run.v1"
+      ],
+      "activity": [
+        "applypilot.operation.v1"
+      ],
+      "persistence": "Business PostgreSQL records; immutable private inputs and receipts outside Workflow History; versioned dataset/program artifacts",
+      "idempotency_identity": "learning_run_id + dataset_id + program_id + optimizer_run_id",
+      "source_verification": "Source module hashes and production SDK registrations are verified by tools/temporal/inventory.py. Provider validation scope is recorded separately in VALIDATION.json."
+    },
+    {
+      "name": "Recursive Language Model execution",
+      "modules": [
+        "reasoning/rlm_runtime.py",
+        "reasoning/__init__.py",
+        "llm.py"
+      ],
+      "domain_entity": "model result",
+      "inputs": "Grounded long context, task schema",
+      "outputs": "Validated structured model result",
+      "side_effects": "Model/sandbox calls",
+      "capability": "learning models preparation",
+      "temporal_path": "RLM remains enabled within semantic model Activities",
+      "queue": "applypilot.default.learning; applypilot.default.models; applypilot.default.preparation",
+      "trigger": "Temporal CLI/dashboard command or applicable native Schedule; Model task",
+      "dashboard": "RLM/settings views",
+      "migration_status": "temporal-native",
+      "remaining_work": "Provider execution limits belong to gateway; native Activity cancellation bounds execution. Live large-context campaigns not run.",
+      "workflow": [
+        "applypilot.learning-run.v1",
+        "applypilot.job.v3",
+        "applypilot.signal.v1"
+      ],
+      "activity": [
+        "applypilot.operation.v1",
+        "applypilot.extract_signal.v1"
+      ],
+      "persistence": "Business PostgreSQL records; immutable private inputs and receipts outside Workflow History; RLM context/artifact storage",
+      "idempotency_identity": "semantic Activity identity and versioned model evidence",
+      "source_verification": "Source module hashes and production SDK registrations are verified by tools/temporal/inventory.py. Provider validation scope is recorded separately in VALIDATION.json."
+    },
+    {
+      "name": "Policy/program feedback and quality learning",
+      "modules": [
+        "orchestration/learning_workflows.py",
+        "orchestration/learning_domain.py",
+        "reasoning/learning_compile.py",
+        "reasoning/learning_store.py",
+        "reasoning/optimizers.py",
+        "reasoning/policies.py"
+      ],
+      "domain_entity": "feedback/policy/program",
+      "inputs": "Production traces, outcomes and metric evidence",
+      "outputs": "Evaluation examples/policy updates",
+      "side_effects": "Learning persistence",
+      "capability": "learning",
+      "temporal_path": "Collect -> build dataset -> evaluate current -> public DSPy optimizer -> evaluate candidate -> promotion checks",
+      "queue": "applypilot.default.learning",
+      "trigger": "Temporal CLI/dashboard command or applicable native Schedule; Feedback/model/application outcome",
+      "dashboard": "Learning/policy views",
+      "migration_status": "temporal-native",
+      "remaining_work": "Full paid/live optimizer campaigns were not run; promotion and dataset checks remain active.",
+      "workflow": [
+        "applypilot.learning.v1",
+        "applypilot.learning-run.v1"
+      ],
+      "activity": [
+        "applypilot.operation.v1"
+      ],
+      "persistence": "Business PostgreSQL records; immutable private inputs and receipts outside Workflow History; versioned dataset/program artifacts",
+      "idempotency_identity": "learning_run_id + dataset_id + program_id + optimizer_run_id",
+      "source_verification": "Source module hashes and production SDK registrations are verified by tools/temporal/inventory.py. Provider validation scope is recorded separately in VALIDATION.json."
+    },
+    {
+      "name": "Backups, exports and restore tooling",
+      "modules": [
+        "orchestration/backup_domain.py",
+        "backup/service.py",
+        "backup/restic.py",
+        "backup/archive.py",
+        "backup/safety.py"
+      ],
+      "domain_entity": "backup/archive",
+      "inputs": "Configured workspace and backup destination",
+      "outputs": "Archive/export and recorded result",
+      "side_effects": "Filesystem/external backup writes",
+      "capability": "maintenance",
+      "temporal_path": "Temporal Schedule/ServiceWorkflow -> one backup sync/check/list operation",
+      "queue": "applypilot.default.maintenance",
+      "trigger": "Temporal CLI/dashboard command or applicable native Schedule; backup schedule and explicit CLI",
+      "dashboard": "Backup/settings views",
+      "migration_status": "temporal-native",
+      "remaining_work": "Destructive restore remains an explicit owner infrastructure operation; no production backup restore performed.",
+      "workflow": [
+        "applypilot.service.v1"
+      ],
+      "activity": [
+        "applypilot.operation.v1"
+      ],
+      "persistence": "Business PostgreSQL records; immutable private inputs and receipts outside Workflow History; external backup repository",
+      "idempotency_identity": "backup snapshot/manifest identity",
+      "source_verification": "Source module hashes and production SDK registrations are verified by tools/temporal/inventory.py. Provider validation scope is recorded separately in VALIDATION.json."
+    },
+    {
+      "name": "Support ZIP and operational diagnostics",
+      "modules": [
+        "operations/bundle.py",
+        "operations/bundle_queries.py",
+        "operations/diagnostics.py",
+        "operations/exporter.py",
+        "orchestration/observability.py"
+      ],
+      "domain_entity": "support bundle",
+      "inputs": "Explicit diagnostic request and output-size bounds",
+      "outputs": "Support ZIP and Temporal status snapshot",
+      "side_effects": "Read services; write diagnostic artifacts",
+      "capability": "external infrastructure",
+      "temporal_path": "Read-only infrastructure diagnostic collection",
+      "queue": null,
+      "trigger": "Support export / temporal status",
+      "dashboard": "Diagnostics and Temporal status panel",
+      "migration_status": "observability-infrastructure",
+      "remaining_work": "No diagnostic data controls scheduling.",
+      "workflow": [],
+      "activity": [],
+      "persistence": "diagnostic artifacts and Temporal visibility",
+      "idempotency_identity": "diagnostic capture identity",
+      "source_verification": "Source module hashes and production SDK registrations are verified by tools/temporal/inventory.py. Provider validation scope is recorded separately in VALIDATION.json."
+    },
+    {
+      "name": "Dashboard controls and CLI execution",
+      "modules": [
+        "web/server.py",
+        "web/engine.py",
+        "web/forms.py",
+        "cli.py",
+        "orchestration/cli.py",
+        "orchestration/client.py"
+      ],
+      "domain_entity": "user command/business view",
+      "inputs": "Authorized user operation",
+      "outputs": "Command result and business views",
+      "side_effects": "Native Temporal command plus business persistence",
+      "capability": "external infrastructure",
+      "temporal_path": "CLI/dashboard submits native Temporal commands, Schedules, Updates, Signals and queries",
+      "queue": null,
+      "trigger": "Temporal CLI/dashboard command or applicable native Schedule; Manual commands/UI",
+      "dashboard": "Existing dashboard",
+      "migration_status": "temporal-client",
+      "remaining_work": "",
+      "workflow": [
+        "applypilot.dispatch.v2",
+        "applypilot.service.v1"
+      ],
+      "activity": [],
+      "persistence": "Business PostgreSQL records; immutable private inputs and receipts outside Workflow History; Temporal histories",
+      "idempotency_identity": "stable Workflow/Schedule/entity IDs",
+      "source_verification": "Source module hashes and production SDK registrations are verified by tools/temporal/inventory.py. Provider validation scope is recorded separately in VALIDATION.json."
+    },
+    {
+      "name": "Model gateway routing and LiteLLM extensions",
+      "modules": [
+        "llm.py",
+        "gateway_policy.py",
+        "integrations/model_gateway.py"
+      ],
+      "domain_entity": "model request",
+      "inputs": "Configured model alias and request",
+      "outputs": "Provider response/accounting",
+      "side_effects": "Model provider request",
+      "capability": "external infrastructure",
+      "temporal_path": "External LiteLLM native Router and supported hooks",
+      "queue": null,
+      "trigger": "Model calls",
+      "dashboard": "Gateway/provider health views",
+      "migration_status": "provider-infrastructure",
+      "remaining_work": "Pinned1.98 native routing/accounting and proxy stream validation passed with mocked providers. Completed malformed constrained streams fail outside Router fallback; direct Router consumers bypass proxy validation; native Router cooldown treats local admission RateLimitError as HTTP429. No live provider campaign run.",
+      "workflow": [],
+      "activity": [],
+      "persistence": "provider usage/restriction infrastructure and gateway diagnostics",
+      "idempotency_identity": "native request/deployment accounting identity",
+      "source_verification": "Source module hashes and production SDK registrations are verified by tools/temporal/inventory.py. Provider validation scope is recorded separately in VALIDATION.json."
+    },
+    {
+      "name": "Egress infrastructure and route allocation",
+      "modules": [
+        "integrations/net.py",
+        "integrations/routing.py"
+      ],
+      "domain_entity": "network route",
+      "inputs": "Configured provider request",
+      "outputs": "Network response",
+      "side_effects": "External network traffic",
+      "capability": "external infrastructure",
+      "temporal_path": "External credential/route infrastructure used by finite provider requests",
+      "queue": null,
+      "trigger": "Provider/browser request",
+      "dashboard": "Egress/provider health views",
+      "migration_status": "network-infrastructure",
+      "remaining_work": "Network service allocation is external infrastructure; it does not assign application workers.",
+      "workflow": [],
+      "activity": [],
+      "persistence": "atomic Redis network route and credential facts",
+      "idempotency_identity": "provider credential + network route identity",
+      "source_verification": "Source module hashes and production SDK registrations are verified by tools/temporal/inventory.py. Provider validation scope is recorded separately in VALIDATION.json."
+    },
+    {
+      "name": "Onboarding, integrations and workspace setup",
+      "modules": [
+        "orchestration/utility_workflows.py",
+        "orchestration/utility_domain.py",
+        "onboarding/github.py",
+        "onboarding/service.py",
+        "onboarding/workspace.py",
+        "wizard/init.py"
+      ],
+      "domain_entity": "workspace/profile",
+      "inputs": "User-supplied profile, source consent and local configuration",
+      "outputs": "Configured workspace and evidence",
+      "side_effects": "Local setup and explicitly authorized external reads",
+      "capability": "documents research models maintenance",
+      "temporal_path": "Setup stores owner configuration; evidence/model work uses UtilityWorkflow",
+      "queue": "applypilot.default.documents; applypilot.default.research; applypilot.default.models; applypilot.default.maintenance",
+      "trigger": "Temporal CLI/dashboard command or applicable native Schedule; User setup",
+      "dashboard": "Onboarding/Connections",
+      "migration_status": "temporal-native",
+      "remaining_work": "Initial account credentials and profile facts still require the owner.",
+      "workflow": [
+        "applypilot.utility.v1"
+      ],
+      "activity": [
+        "applypilot.utility.intake.v1",
+        "applypilot.utility.material_url.v1",
+        "applypilot.utility.github_inventory.v1",
+        "applypilot.utility.github_repository.v1",
+        "applypilot.utility.github_finish.v1",
+        "applypilot.utility.suggest.v1"
+      ],
+      "persistence": "Business PostgreSQL records; immutable private inputs and receipts outside Workflow History; local credential/profile configuration",
+      "idempotency_identity": "immutable request + repository identity/revision",
+      "source_verification": "Source module hashes and production SDK registrations are verified by tools/temporal/inventory.py. Provider validation scope is recorded separately in VALIDATION.json."
+    },
+    {
+      "name": "Cloudflare domain email identity provisioning",
+      "modules": [
+        "integrations/email_status.py",
+        "orchestration/integration_workflows.py"
+      ],
+      "domain_entity": "domain/email identity",
+      "inputs": "Configured sender domain and optional DKIM selector",
+      "outputs": "Observed MX/SPF/DMARC/DKIM records",
+      "side_effects": "Read-only DNS observations; persist account facts",
+      "capability": "email",
+      "temporal_path": "EmailWarmupWorkflow observes Cloudflare DNS facts for configured sender domain",
+      "queue": "applypilot.default.email",
+      "trigger": "Temporal CLI/dashboard command or applicable native Schedule; Email warm-up schedule or explicit workflow",
+      "dashboard": "Business account observations and Temporal execution status",
+      "migration_status": "external-provisioning-native-observation",
+      "remaining_work": "Provisioning/forwarding is external infrastructure; this adapter observes MX/SPF/DMARC/DKIM and does not provision domain addresses.",
+      "workflow": [
+        "applypilot.email-warmup.v1"
+      ],
+      "activity": [
+        "applypilot.integration.domain_email_status.v1"
+      ],
+      "persistence": "Business PostgreSQL records; immutable private inputs and receipts outside Workflow History; deployment-owned domain configuration",
+      "idempotency_identity": "sender/account identity + observed DNS records",
+      "source_verification": "Source module hashes and production SDK registrations are verified by tools/temporal/inventory.py. Provider validation scope is recorded separately in VALIDATION.json."
+    },
+    {
+      "name": "External email warm-up lifecycle",
+      "modules": [
+        "integrations/email_status.py",
+        "orchestration/integration_workflows.py"
+      ],
+      "domain_entity": "email account",
+      "inputs": "Configured external Darkzwarmer database and sender account",
+      "outputs": "Observed warm-up day and send count",
+      "side_effects": "Read-only external state; persist observation",
+      "capability": "email",
+      "temporal_path": "Temporal observes external Darkzwarmer account state without copying its scheduler",
+      "queue": "applypilot.default.email",
+      "trigger": "Temporal CLI/dashboard command or applicable native Schedule; Temporal email warm-up Schedule",
+      "dashboard": "Business account observations and Temporal execution status",
+      "migration_status": "external-warmup-native-observation",
+      "remaining_work": "External warm-up must be configured; observed day/send counts are evidence, not a fabricated deliverability guarantee.",
+      "workflow": [
+        "applypilot.email-warmup.v1"
+      ],
+      "activity": [
+        "applypilot.integration.observe_warmup.v1"
+      ],
+      "persistence": "Business PostgreSQL records; immutable private inputs and receipts outside Workflow History; read-only configured external warm-up SQLite database",
+      "idempotency_identity": "sender account identity",
+      "source_verification": "Source module hashes and production SDK registrations are verified by tools/temporal/inventory.py. Provider validation scope is recorded separately in VALIDATION.json."
+    },
+    {
+      "name": "Social publishing/replies through XActions",
+      "modules": [
+        "integrations/social.py",
+        "integrations/social_actions.py",
+        "integrations/mcp.py",
+        "orchestration/integration_workflows.py",
+        "orchestration/integration_domain.py"
+      ],
+      "domain_entity": "social message",
+      "inputs": "Explicitly authorized response/post",
+      "outputs": "Provider action receipt or unresolved observable outcome",
+      "side_effects": "Authorized external social operation and receipt persistence",
+      "capability": "social models network",
+      "temporal_path": "Social/professional action Workflow -> external XActions/LinkedIn adapter -> provider receipt",
+      "queue": "applypilot.default.social; applypilot.default.models; applypilot.default.network",
+      "trigger": "Temporal CLI/dashboard command or applicable native Schedule; Requested social operation",
+      "dashboard": "Existing source views are not publishing controls",
+      "migration_status": "temporal-native",
+      "remaining_work": "External adapter requires configured supported tools; no live social actions sent.",
+      "workflow": [
+        "applypilot.social.v1",
+        "applypilot.professional-action.v1",
+        "applypilot.outreach-account.v1"
+      ],
+      "activity": [
+        "applypilot.integration.social_inventory.v1",
+        "applypilot.integration.discover_social_signal.v1",
+        "applypilot.integration.research_author.v1",
+        "applypilot.integration.draft_response.v1",
+        "applypilot.integration.professional_send_policy.v1",
+        "applypilot.integration.publish_response.v1",
+        "applypilot.integration.follow_account.v1",
+        "applypilot.integration.send_message.v1",
+        "applypilot.integration.send_connection.v1",
+        "applypilot.integration.observe_reply.v1"
+      ],
+      "persistence": "Business PostgreSQL records; immutable private inputs and receipts outside Workflow History",
+      "idempotency_identity": "operation_id + approved input hash + provider resource ID",
+      "source_verification": "Source module hashes and production SDK registrations are verified by tools/temporal/inventory.py. Provider validation scope is recorded separately in VALIDATION.json."
+    },
+    {
+      "name": "Approved document artifact publication and upload selection",
+      "modules": [
+        "documents/artifacts.py",
+        "documents/service.py",
+        "documents/store.py",
+        "apply/guard.py",
+        "apply/agent_prompt.py",
+        "orchestration/document_workflows.py"
+      ],
+      "domain_entity": "document generation / artifact",
+      "inputs": "document_id and format; immutable approved text/evidence stored outside History",
+      "outputs": "artifact_id; immutable bundle manifest; verified upload selection",
+      "side_effects": "Atomic shared-filesystem publication and SQL artifact receipt",
+      "capability": "documents preparation",
+      "temporal_path": "Job document child -> approved generation -> immutable rendered artifact",
+      "queue": "applypilot.default.documents; applypilot.default.preparation",
+      "trigger": "Temporal CLI/dashboard command or applicable native Schedule; JobDocumentWorkflow or explicit DocumentWorkflow",
+      "dashboard": "Existing document/job views; no dedicated new artifact panel",
+      "migration_status": "temporal-native",
+      "remaining_work": "Cross-host artifact storage must be mounted consistently; live renderers/providers were not all exercised.",
+      "workflow": [
+        "applypilot.job.v3",
+        "applypilot.job_document.v1",
+        "applypilot.document.v1"
+      ],
+      "activity": [
+        "applypilot.prepare_document.v1",
+        "applypilot.render_document.v1"
+      ],
+      "persistence": "Business PostgreSQL records; immutable private inputs and receipts outside Workflow History; shared artifact filesystem",
+      "idempotency_identity": "document_id + format + approved content-derived artifact_id",
+      "source_verification": "Source module hashes and production SDK registrations are verified by tools/temporal/inventory.py. Provider validation scope is recorded separately in VALIDATION.json."
+    },
+    {
+      "name": "Explicit business-store deployment and pool hygiene",
+      "modules": [
+        "postgres.py",
+        "database.py",
+        "integrations/state.py",
+        "operations/store.py",
+        "reasoning/learning_store.py",
+        "orchestration/client.py",
+        "migrations/retire_execution.py",
+        "migrations/company_execution.py",
+        "migrations/application_recovery.py"
+      ],
+      "domain_entity": "business schema / database connection",
+      "inputs": "Deployment-owned database URL and logical store path",
+      "outputs": "Initialized namespace/tables; clean or discarded connection",
+      "side_effects": "Explicit deployment DDL; transaction rollback and socket cleanup",
+      "capability": "external infrastructure",
+      "temporal_path": "Explicit deployment initialization and archive-before-retirement migrations",
+      "queue": null,
+      "trigger": "Explicit staging deployment command",
+      "dashboard": "Existing database diagnostics",
+      "migration_status": "deployment-infrastructure",
+      "remaining_work": "Fresh schema initialized twice in isolated PostgreSQL; production database was not migrated.",
+      "workflow": [],
+      "activity": [],
+      "persistence": "Business PostgreSQL records; immutable private inputs and receipts outside Workflow History; retained retired execution/business evidence",
+      "idempotency_identity": "idempotent schema migration keys",
+      "source_verification": "Source module hashes and production SDK registrations are verified by tools/temporal/inventory.py. Provider validation scope is recorded separately in VALIDATION.json."
+    }
+  ],
+  "delivery_status": "Current source contracts mapped to production Temporal registration; external infrastructure is explicitly classified. See ARCHITECTURE_AUDIT.json and VALIDATION.json for independent evidence."
+}

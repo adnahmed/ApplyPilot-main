@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: applypilot-activities
+spec:
+  replicas: 2
+  selector:
+    matchLabels: {app: applypilot-activities}
+  template:
+    metadata:
+      labels: {app: applypilot-activities}
+    spec:
+      terminationGracePeriodSeconds: 360
+      containers:
+        - name: worker
+          image: applypilot-temporal-worker:local
+          args: [worker, --roles, "$(APPLYPILOT_WORKER_ROLES)"]
+          env:
+            - {name: APPLYPILOT_WORKER_ROLES, value: "discovery,research,models,documents,learning,network,email,social,reporting,maintenance,egress"}
+            - {name: APPLYPILOT_TEMPORAL_ADDRESS, value: temporal-frontend.temporal.svc:7233}
+            - {name: APPLYPILOT_TEMPORAL_NAMESPACE, value: applypilot}
+            - {name: APPLYPILOT_TEMPORAL_WORKSPACE, value: default}
+            - name: APPLYPILOT_DATABASE_URL
+              valueFrom: {secretKeyRef: {name: applypilot-worker, key: database-url}}
+            - name: LLM_URL
+              valueFrom: {secretKeyRef: {name: applypilot-worker, key: litellm-url}}
+            - name: LLM_API_KEY
+              valueFrom: {secretKeyRef: {name: applypilot-worker, key: litellm-key}}
+          volumeMounts:
+            - {name: workspace, mountPath: /workspace}
+          resources:
+            requests: {cpu: "1", memory: 2Gi}
+            limits: {cpu: "4", memory: 8Gi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 10001
+            capabilities: {drop: [ALL]}
+      volumes:
+        - name: workspace
+          persistentVolumeClaim: {claimName: applypilot-shared-workspace}

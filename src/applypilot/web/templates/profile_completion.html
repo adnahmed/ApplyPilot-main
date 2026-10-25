@@ -1,0 +1,11 @@
+{% set progress = completion|default({}) %}
+{% if progress.get('message') %}
+<wa-callout variant="neutral" class="profile-completion" aria-label="Automatic profile updates">
+  {% if progress.get('task_id') and progress.get('state') in ['queued', 'running'] %}
+  <div hx-get="/ui/tasks/{{ progress.task_id }}" hx-trigger="load" hx-target="this" hx-select="unset" role="status">{{ progress.message }}</div>
+  {% else %}
+  <p role="status">{{ progress.message }}</p>
+  {% if progress.get('state') in ['failed', 'timed_out', 'interrupted'] %}<p class="muted">Saved answers are retained. Automatic completion retries after a short delay.</p>{% endif %}
+  {% endif %}
+</wa-callout>
+{% endif %}

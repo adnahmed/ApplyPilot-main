@@ -1,0 +1,46 @@
+{% from 'macros.html' import status_variant %}
+
+{% macro activity_summary(counts) -%}
+{% if counts %}<ul class="work-breakdown" aria-label="Tasks in progress by activity">
+{% for category, count in counts.items() %}<li><strong data-number>{{ count }}</strong> {{ category }}</li>{% endfor %}
+</ul>{% endif %}
+{%- endmacro %}
+
+{% macro worker_row(item) -%}
+{% set work = item.get('activity') or item|work_activity %}
+<article class="worker-row">
+  <div class="worker-kind"><h4>{{ work.category }}</h4><wa-badge variant="{{ status_variant(work.state) }}">{{ work.status }}</wa-badge></div>
+  <div>
+    <strong>{{ work.title }}</strong>
+    {% if work.target %}<small>{% if not work.in_progress and (item.get('last_job_title') or work.bucket == 'ended') %}Previous task: {% endif %}{{ work.target }}</small>{% endif %}
+    {% if work.company %}<small>{{ work.company }}</small>{% endif %}
+    {% if work.purpose %}<p class="row-description">{{ work.purpose }}</p>{% endif %}
+    {% if item.get('source') %}<small>Job source: {{ item.source }}</small>{% endif %}
+    {% set reason = item.get('waiting_reason') or item.get('reason') %}
+    {% if reason and reason != work.detail %}<p class="row-description">{{ reason }}</p>{% endif %}
+    {% set issue = item.get('last_issue') %}
+    {% if issue %}
+      <wa-callout variant="{{ 'neutral' if issue is mapping and issue.get('resolved') else 'warning' if issue is mapping and issue.get('severity') == 'warning' else 'danger' }}">{{ (issue.get('message') or issue.get('summary')) if issue is mapping else issue }}</wa-callout>
+      {% if issue is mapping and issue.get('exception_type') and not issue.get('resolved') %}<small>{{ issue.exception_type }}{% if issue.get('origin') %} · {{ issue.origin }}{% endif %}</small>{% endif %}
+    {% endif %}
+    {% if not work.in_progress and item.get('last_outcome') %}<small>Previous outcome: {{ item.last_outcome|label }}</small>{% endif %}
+    {% if item.get('selection') and item.selection.get('first_blockers') %}
+      <ul>{% for blocker in item.selection.first_blockers[:3] %}<li>{{ blocker.label }}: {{ blocker.count }}</li>{% endfor %}</ul>
+    {% endif %}
+  </div>
+  <div class="worker-meta">
+    <span>{{ work.detail }}</span>
+    {% if item.get('worker_id') is not none and item.get('kind') == 'application' %}<a href="/ui/detail/worker/{{ item.worker_id }}?{{ urlencode({'trace':item.get('trace_id') or ''}) }}" hx-get="/ui/detail/worker/{{ item.worker_id }}?{{ urlencode({'trace':item.get('trace_id') or ''}) }}" hx-target="#detail-content" hx-select="unset" hx-swap="innerHTML">Open live log</a>{% endif %}
+    {% if work.in_progress and item.get('elapsed_seconds') is number %}<small>{{ item.elapsed_seconds|round(1) }} seconds since task started</small>{% endif %}
+    <details class="worker-technical" data-disclosure-key="worker:{{ item.get('key') or item.get('worker') }}"><summary>Technical details<span class="sr-only"> for {{ work.title }}{% if work.target %}: {{ work.target }}{% endif %}{% if work.company %} at {{ work.company }}{% endif %}</span></summary>
+      {% if item.get('worker') %}<small>Worker: {{ item.worker }}</small>{% endif %}
+      {% if item.get('stage') %}<small>Stage: {{ item.stage }}</small>{% endif %}
+      {% if item.get('operation') %}<small>Operation: {{ item.operation }}</small>{% endif %}
+      {% if item.get('model') %}<small>Model: {{ item.model }}</small>{% endif %}
+      {% if item.get('model_task') %}<small>AI routing profile: {{ item.model_task }}</small>{% endif %}
+      {% if item.get('key') %}<small>Worker ID: {{ item.key }}</small>{% endif %}
+      {% if item.get('trace_id') %}<a href="/api/workers/trace?{{ urlencode({'id':item.trace_id,'source':'agent'}) }}" download="worker-session.json">Download session trace</a>{% endif %}
+    </details>
+  </div>
+</article>
+{%- endmacro %}

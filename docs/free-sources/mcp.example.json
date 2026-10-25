@@ -1,0 +1,23 @@
+{
+  "linkedin_mcp": {
+    "command": "mcp-server-linkedin",
+    "args": ["--no-auto-import"],
+    "env_passthrough": [],
+    "timeout": 120,
+    "read_only_confirmed": false
+  },
+  "xactions": {
+    "command": "xactions-mcp",
+    "args": [],
+    "env_passthrough": ["XACTIONS_SESSION_COOKIE"],
+    "timeout": 120,
+    "read_only_confirmed": false
+  },
+  "x_use": {
+    "command": "x-use",
+    "args": ["mcp"],
+    "env_passthrough": [],
+    "timeout": 150,
+    "read_only_confirmed": false
+  }
+}

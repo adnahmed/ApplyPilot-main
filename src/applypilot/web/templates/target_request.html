@@ -1,0 +1,9 @@
+<wa-callout variant="success" role="status">
+  <strong>Target discovery request accepted</strong>
+  <p>Execution belongs to Temporal. Discovery completion has not been checked.</p>
+  <p>Workflow: <code>{{ execution.workflow_id }}</code></p>
+  <p>The dispatcher's completion means source workflows were submitted, not that their discovery work has finished.</p>
+  <p><a href="{{ status_url }}" target="_blank" rel="noopener">Inspect exact dispatch status</a>
+     · <a href="/ui/targets/{{ target.id }}">Reload target evidence and controls</a></p>
+  <p>Use Temporal UI to inspect child workflows. Reload the target before another edit because its revision changed.</p>
+</wa-callout>

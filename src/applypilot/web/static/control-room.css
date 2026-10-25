@@ -1,0 +1,234 @@
+/* Task-oriented controls, inheriting the existing light/dark theme. */
+.action-dialog {
+    width: min(34rem, calc(100vw - 2rem));
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 1.6rem;
+    background: var(--surface, #fff);
+    color: var(--ink, #172522);
+    box-shadow: 0 24px 80px #0004;
+}
+
+.action-dialog::backdrop {
+    background: #0006;
+    backdrop-filter: blur(2px)
+}
+
+.action-dialog h2 {
+    margin: 0 0 .8rem;
+    font-size: 1.25rem
+}
+
+.action-dialog p {
+    line-height: 1.65;
+    white-space: pre-line
+}
+
+.action-dialog .form-actions {
+    justify-content: flex-end;
+    margin-top: 1.4rem
+}
+
+button:disabled {
+    cursor: not-allowed
+}
+
+button[aria-busy=true] {
+    cursor: progress
+}
+
+.autopilot-control {
+    margin-bottom: 1.2rem
+}
+
+.autopilot-control-copy {
+    min-width: 0
+}
+
+.autopilot-control-copy h2 {
+    font-size: 1.45rem;
+    line-height: 1.3
+}
+
+.autopilot-control-copy p {
+    max-width: 65ch
+}
+
+#autopilot-lifetime {
+    font-size: .76rem;
+    line-height: 1.5
+}
+
+#autopilot-work:empty {
+    display: none
+}
+
+#operations-alert {
+    background: transparent;
+    border: 0;
+    padding: .35rem 0;
+    font-size: .85rem;
+    color: var(--muted)
+}
+
+.buffer-card,
+.outreach-controls {
+    margin-bottom: 1.25rem
+}
+
+.buffer-card .card-head {
+    align-items: flex-start
+}
+
+.buffer-card .card-head p {
+    max-width: 68ch;
+    line-height: 1.5
+}
+
+.buffer-metrics {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
+    margin: 0 0 1rem
+}
+
+.buffer-metrics>div {
+    display: flex;
+    flex-direction: column;
+    gap: .25rem
+}
+
+.buffer-metrics strong {
+    font-size: 1.6rem;
+    font-variant-numeric: tabular-nums
+}
+
+.buffer-metrics span {
+    font-size: .82rem;
+    color: var(--muted)
+}
+
+.buffer-card summary,
+.outreach-controls summary {
+    cursor: pointer;
+    font-weight: 600;
+    padding: .8rem 0
+}
+
+.buffer-card form,
+.outreach-controls details form {
+    padding: .75rem 0
+}
+
+.outreach-controls .card-content {
+    padding-bottom: 1.25rem
+}
+
+.settings-shortcuts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .7rem;
+    margin-bottom: 1rem
+}
+
+.settings-shortcuts+.outreach-controls {
+    margin-top: 1rem
+}
+
+.line-chart {
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important
+}
+
+.chart-panel {
+    margin-bottom: 1rem
+}
+
+.chart-panel h3 {
+    font-size: .95rem;
+    margin: .4rem 0
+}
+
+.chart-panel p {
+    font-size: .78rem;
+    color: var(--muted);
+    margin: .2rem 0
+}
+
+.chart-panel svg {
+    display: block;
+    width: 100%;
+    height: auto
+}
+
+.chart-access .table-scroll {
+    max-height: 24rem;
+    overflow: auto
+}
+
+.chart-access caption {
+    padding: .75rem;
+    text-align: left;
+    font-size: .85rem
+}
+
+#queue-save-status {
+    font-size: .85rem
+}
+
+.stat-foot a {
+    font-weight: 600
+}
+
+.stats-grid {
+    margin-bottom: 1.25rem
+}
+
+@media(max-width:800px) {
+    .buffer-metrics {
+        grid-template-columns: repeat(3, minmax(0, 1fr))
+    }
+
+    .action-dialog {
+        padding: 1.1rem
+    }
+
+    .buffer-card .card-head {
+        flex-wrap: wrap
+    }
+}
+
+@media(max-width:480px) {
+    .buffer-metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr))
+    }
+
+    .action-dialog .form-actions {
+        flex-wrap: wrap
+    }
+
+    .autopilot-control-copy h2 {
+        font-size: 1.2rem
+    }
+}
+
+@media(prefers-reduced-motion:reduce) {
+    .action-dialog::backdrop {
+        backdrop-filter: none
+    }
+}
+
+.incident-summary>summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .65rem;
+    line-height: 1.6
+}
+
+.incident-summary>summary>span:last-child {
+    margin-left: auto;
+    font-size: .8rem;
+    color: var(--muted)
+}

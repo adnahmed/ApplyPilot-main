@@ -1,0 +1,138 @@
+# ApplyPilot search configuration
+# Copy to ~/.applypilot/searches.yaml and customize for your job search.
+# The wizard (applypilot init) generates a basic version automatically.
+
+# Search queries -- each has a query string and priority tier.
+# Tier 1: High-priority exact matches (searched first, highest precision)
+# Tier 2: Strong matches, broader scope
+# Tier 3: Wide net, high volume, lower precision
+queries:
+  - query: "software engineer"
+    tier: 1
+  - query: "backend engineer"
+    tier: 1
+  - query: "backend developer"
+    tier: 1
+  - query: "full stack developer"
+    tier: 2
+  - query: "full stack engineer"
+    tier: 2
+  - query: "python developer"
+    tier: 2
+  - query: "python engineer"
+    tier: 2
+  - query: "DevOps engineer"
+    tier: 2
+  - query: "site reliability engineer"
+    tier: 2
+  - query: "platform engineer"
+    tier: 2
+  - query: "cloud engineer"
+    tier: 2
+  - query: "data engineer"
+    tier: 2
+  - query: "infrastructure engineer"
+    tier: 2
+  - query: "software developer"
+    tier: 3
+  - query: "developer"
+    tier: 3
+  - query: "systems engineer"
+    tier: 3
+  - query: "automation engineer"
+    tier: 3
+  - query: "solutions engineer"
+    tier: 3
+  - query: "integration engineer"
+    tier: 3
+  - query: "ML engineer"
+    tier: 3
+  - query: "machine learning engineer"
+    tier: 3
+  - query: "AI engineer"
+    tier: 3
+  - query: "security engineer"
+    tier: 3
+
+# Locations to search
+locations:
+  - location: "San Francisco, CA"
+    country: "usa"
+    remote: false
+  - location: "Remote"
+    country: "usa"
+    remote: true
+
+# Location filtering -- accept/reject patterns for job location text
+location:
+  accept_patterns:
+    - "San Francisco"
+    - "Bay Area"
+    - "SF"
+    - "California"
+    - "CA"
+    - "Remote"
+    - "Anywhere"
+    - "United States"
+    - "US"
+    - "USA"
+  reject_patterns:
+    - "New York only"
+    - "Seattle only"
+    - "onsite only"
+    - "London, UK"
+    - "India"
+    - "Philippines"
+
+# Fallback Indeed country for location entries without a country
+# Used as country_indeed for Indeed/Glassdoor when a location entry lacks
+# a country field.  Also controls which boards are skipped automatically:
+#   - Naukri: only scraped when country=india
+#   - BDJobs: only scraped when country=bangladesh
+#   - Bayt: skipped for usa/canada/uk/australia (MENA-focused)
+#   - Glassdoor: skipped for unsupported countries (raises exception)
+country: "USA"
+
+# Authoritative discovery providers. Only listed providers run in discover
+# and autopilot. `sites`/`boards` remain accepted as legacy aliases.
+#
+# Google Jobs: time filters are encoded automatically (hours_old maps to
+# "since yesterday" / "in the last 3 days" / "in the last week" / "in the last month").
+# Remote queries omit location; non-remote queries include "near {location}".
+#
+# Indeed: when is_remote=True, hours_old is dropped (Indeed only supports one
+# filter group per search).
+#
+# Naukri: India-focused. Returns skills, experience_range, work_from_home_type.
+# Bayt: Middle East focused. Sparse data (no description, no location filtering).
+# BDJobs: Bangladesh focused. Always fetches full descriptions.
+#
+# ZipRecruiter: disabled (Cloudflare-blocked, 403 on all requests).
+sources:
+  sites:
+    - indeed
+    - linkedin
+    - glassdoor
+    - google
+    - naukri
+    - bayt
+    - bdjobs
+    - freehire
+
+# Search defaults
+defaults:
+  results_per_site: -1   # Uncapped workload; provider requests still use finite pages
+  hours_old: 72          # Only jobs posted within this many hours
+
+# Negative keywords -- skip jobs with these in the title (case-insensitive)
+exclude_titles:
+  - "senior director"
+  - "VP "
+  - "vice president"
+  - "chief"
+  - "intern"
+  - "internship"
+  - "co-op"
+  - "clearance required"
+  - "TS/SCI"
+  - "principal scientist"

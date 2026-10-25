@@ -1,0 +1,23 @@
+{
+  "entry": "frontend/components.js",
+  "libraries": {
+    "webawesome": "3.14.0",
+    "lit": "3.3.3"
+  },
+  "components": [
+    "node_modules/@awesome.me/webawesome/dist/components/icon/library.system.js",
+    "node_modules/@awesome.me/webawesome/dist/components/icon/library.js",
+    "node_modules/@awesome.me/webawesome/dist/components/button/button.js",
+    "node_modules/@awesome.me/webawesome/dist/components/input/input.js",
+    "node_modules/@awesome.me/webawesome/dist/components/select/select.js",
+    "node_modules/@awesome.me/webawesome/dist/components/option/option.js",
+    "node_modules/@awesome.me/webawesome/dist/components/textarea/textarea.js",
+    "node_modules/@awesome.me/webawesome/dist/components/checkbox/checkbox.js",
+    "node_modules/@awesome.me/webawesome/dist/components/badge/badge.js",
+    "node_modules/@awesome.me/webawesome/dist/components/card/card.js",
+    "node_modules/@awesome.me/webawesome/dist/components/callout/callout.js",
+    "node_modules/@awesome.me/webawesome/dist/components/details/details.js",
+    "node_modules/@awesome.me/webawesome/dist/components/dialog/dialog.js",
+    "node_modules/@awesome.me/webawesome/dist/components/spinner/spinner.js"
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "devDependencies": {
+    "@playwright/test": "1.60.0",
+    "concurrently": "10.0.5",
+    "esbuild": "0.28.2"
+  },
+  "dependencies": {
+    "@awesome.me/webawesome": "3.14.0",
+    "jobspy-js": "^1.7.0",
+    "lit": "3.3.3"
+  },
+  "scripts": {
+    "start": "npm run setup && npm run infra:up && npm run app",
+    "start:quick": "npm run infra:up && npm run app",
+    "setup": "npm ci --include=dev && npm run setup:python && npm run setup:config && npm run setup:browsers && npm run build:ui",
+    "setup:python": "uv sync --python 3.12 --locked --inexact",
+    "setup:config": "uv run --no-sync python scripts/configure_local_system.py",
+    "setup:browsers": "uv run --no-sync python -m playwright install chromium && uv run --no-sync python -c \"from applypilot.onboarding.browser_runtime import prepare; prepare()\"",
+    "build:ui": "node scripts/build_dashboard.mjs",
+    "litellm:build": "docker compose -p guides --env-file docs/guides/.env -f docs/guides/docker-compose.litellm.yml build litellm",
+    "litellm:up": "npm run litellm:build && docker compose -p guides --env-file docs/guides/.env -f docs/guides/docker-compose.litellm.yml up -d --wait --wait-timeout 300",
+    "litellm:stop": "docker compose -p guides --env-file docs/guides/.env -f docs/guides/docker-compose.litellm.yml stop",
+    "litellm:logs": "docker compose -p guides --env-file docs/guides/.env -f docs/guides/docker-compose.litellm.yml logs --tail 100 -f litellm",
+    "temporal:build": "docker compose -p applypilot-temporal --env-file docs/guides/.env -f docs/guides/docker-compose.temporal.yml build temporal-workflows",
+    "temporal:up": "npm run temporal:build && docker compose -p applypilot-temporal --env-file docs/guides/.env -f docs/guides/docker-compose.temporal.yml up -d --wait --wait-timeout 180",
+    "temporal:stop": "docker compose -p applypilot-temporal --env-file docs/guides/.env -f docs/guides/docker-compose.temporal.yml stop",
+    "temporal:logs": "docker compose -p applypilot-temporal --env-file docs/guides/.env -f docs/guides/docker-compose.temporal.yml logs --tail 100 -f temporal temporal-workflows",
+    "infra:up": "npm run litellm:up && npm run temporal:up",
+    "infra:stop": "npm run temporal:stop && npm run litellm:stop",
+    "infra:status": "docker compose -p guides --env-file docs/guides/.env -f docs/guides/docker-compose.litellm.yml ps && docker compose -p applypilot-temporal --env-file docs/guides/.env -f docs/guides/docker-compose.temporal.yml ps",
+    "app:init": "uv run --no-sync python scripts/local_runtime.py temporal initialize",
+    "app:dashboard": "uv run --no-sync python scripts/local_runtime.py dashboard --no-open",
+    "app:workers": "uv run --no-sync python scripts/local_runtime.py temporal worker --roles preparation,discovery,research,models,documents,learning,network,email,social,reporting,maintenance,egress,browser",
+    "app:applications": "uv run --no-sync python scripts/local_runtime.py temporal worker --roles applications",
+    "app": "npm run app:init && node scripts/run_local_app.mjs",
+    "pause": "uv run --no-sync python scripts/local_runtime.py pause",
+    "resume": "uv run --no-sync python scripts/local_runtime.py resume",
+    "status": "npm run infra:status && uv run --no-sync python scripts/local_runtime.py temporal status",
+    "tools:build": "docker compose -p guides --env-file docs/guides/.env -f docs/guides/docker-compose.litellm.yml build source-tools egress-region-controller egress-singbox-controller"
+  },
+  "private": true,
+  "engines": {
+    "node": ">=22"
+  }
+}

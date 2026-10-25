@@ -1,0 +1,25 @@
+global:
+  scrape_interval: 30s
+  evaluation_interval: 30s
+
+rule_files:
+  - /etc/prometheus/alerts.yml
+
+scrape_configs:
+  - job_name: litellm
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["host.docker.internal:4000"]
+    authorization:
+      type: Bearer
+      credentials_file: /run/secrets/litellm_metrics_token
+
+  - job_name: applypilot
+    scrape_interval: 15s
+    scrape_timeout: 5s
+    static_configs:
+      - targets: ["operations-exporter:9108"]
+
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]

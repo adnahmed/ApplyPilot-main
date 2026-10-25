@@ -1,0 +1,86 @@
+{% from 'macros.html' import record, empty %}
+{% macro next_action(item, editable=true) %}
+<article class="opportunity-action{% if item.get('overdue') %} action-overdue{% endif %}">
+  <div class="section-heading"><h3>{{ item.title }}</h3><wa-badge variant="{{ 'warning' if item.get('overdue') else 'neutral' }}">{{ item.state|label }}</wa-badge></div>
+  <p><strong>{{ item.company }}</strong>{% if item.role %} · {{ item.role }}{% endif %}</p>
+  <p>{{ item.reason }}</p>
+  <p class="muted">{{ 'You' if item.actor == 'human' else 'ApplyPilot' }}{% if item.deadline %} · {{ item.deadline_label }}: <time datetime="{{ item.deadline }}" data-time>{{ item.deadline }}</time>{% else %} · {{ item.deadline_label }}{% endif %}</p>
+  {% for material in item.materials %}
+    {% if material.kind == 'message' %}
+      <div class="message-body"><strong>{{ material.subject or 'Employer message' }}</strong><small>{{ material.sender }}</small><p>{{ material.text }}</p></div>
+      {% if material.url and material.url.startswith('https://') %}<p><a href="{{ material.url }}" target="_blank" rel="noopener noreferrer" hx-boost="false">Open the original conversation</a></p>{% endif %}
+    {% elif material.kind == 'practice_session' %}
+      <p class="message-body">{{ material.question }}</p><small>{{ material.completed_answers }} completed answers in this session</small>
+    {% elif material.kind == 'requirement' %}
+      {% if material.get('source_quote') %}<blockquote>{{ material.source_quote }}</blockquote>{% endif %}
+    {% endif %}
+  {% endfor %}
+  <p><a href="{{ item.target_url }}">{{ 'Answer the practice question' if item.kind == 'practice' else 'Open opportunity and supporting material' }}</a></p>
+  {% if item.can_complete and item.state == 'pending' and editable %}
+  <wa-details summary="Record what you completed">
+    <form id="action-{{ item.id|dom_id }}" class="opportunity-form" method="post" action="/ui/actions/opportunities/complete" hx-post="/ui/actions/opportunities/complete" hx-target="this" hx-select="unset" hx-swap="outerHTML" hx-sync="this:drop" hx-disabled-elt="find wa-button">
+      <input type="hidden" name="action_id" value="{{ item.id }}">
+      <wa-textarea label="What did you do?" name="note" required maxlength="4000" help-text="For example: replied with Tuesday and Thursday availability. This records your follow-through."></wa-textarea>
+      <wa-input label="Minutes spent (optional)" name="effort_minutes" type="number" min="0" max="10080"></wa-input>
+      <wa-button type="submit" variant="brand">Record completion</wa-button>
+    </form>
+  </wa-details>
+  {% elif item.completion %}<p class="muted">{{ item.completion.get('note') or 'Completed through the existing workflow.' }}</p>{% endif %}
+</article>
+{% endmacro %}
+{% set case = value.get('opportunity') %}
+{% if value.get('needs_initialization') %}
+  {{ empty('Opportunity records are not available yet.', 'They will appear after the workspace has initialized.') }}
+{% elif case %}
+  <div class="section-heading"><div><h2>{{ case.job.title }}</h2><p>{{ case.job.company }}</p></div><a href="/ui/opportunities">All next actions</a></div>
+  {% set application_target = case.contract.get('route_target') or (case.route or {}).get('target') or case.job.get('application_url') or '' %}
+  {% if application_target.startswith(('https://','http://','mailto:')) %}<p><a href="{{ application_target }}" target="_blank" rel="noopener noreferrer" hx-boost="false">Open employer application route</a></p>{% endif %}
+  <p><strong>{{ case.decision.state|label }}</strong> · {{ case.decision.reason }}</p>
+  {% if case.next_action %}{{ next_action(case.next_action, not read_only) }}{% endif %}
+  {% if case.actions|length > 1 %}<wa-details summary="Other actions and completions">{% for item in case.actions if not case.next_action or item.id != case.next_action.id %}{{ next_action(item, not read_only) }}{% endfor %}</wa-details>{% endif %}
+  <h3 class="section-divider">What the employer requests</h3>
+  {% if case.contract %}
+    <dl class="record"><div><dt>Route</dt><dd>{{ case.contract.get('route','unspecified')|label }} · {{ case.contract.get('route_target') or 'Use the observed application route' }}</dd></div>
+      {% if case.contract.get('required_subject') %}<div><dt>Exact subject</dt><dd>{{ case.contract.required_subject }}</dd></div>{% endif %}
+      {% if case.contract.get('deadline') %}<div><dt>Employer deadline</dt><dd>{{ case.contract.deadline }}{% if case.contract.get('deadline_basis') == 'timezone_unspecified' %}<small>The posting does not specify a timezone.</small>{% endif %}</dd></div>{% endif %}
+      {% for name, rule in case.contract.get('documents',{}).items() %}<div><dt>{{ name|label }}</dt><dd>{{ rule.status|label }}{% if rule.source_quote %}<blockquote>{{ rule.source_quote }}</blockquote>{% endif %}</dd></div>{% endfor %}
+    </dl>
+    {% for requirement in case.contract.get('requirements',[]) %}
+    {% set saved = case.contract.get('responses',{}).get(requirement.id,{}) %}
+    <wa-details summary="{{ requirement.prompt }} · {{ 'Required' if requirement.required else 'Optional' }}">
+      <blockquote>{{ requirement.source_quote }}</blockquote>
+      {% if saved.get('state') == 'needs_input' %}<p>{{ saved.missing_input }}</p>
+      {% elif saved.get('state') == 'execute' %}<p>ApplyPilot will complete this step through the employer’s application route.</p>
+      {% elif saved.get('text') %}<div class="message-body">{{ saved.text }}</div>
+      {% else %}<p>ApplyPilot is preparing this response from your saved information.</p>{% endif %}
+      {% if not read_only and not case.sent_packages and requirement.kind != 'document' %}
+      <wa-details summary="{{ 'Add the missing information' if saved.get('state') == 'needs_input' else 'Edit this response' }}">
+      <form id="requirement-{{ requirement.id }}" class="opportunity-form" method="post" action="/ui/actions/opportunities/response" hx-post="/ui/actions/opportunities/response" hx-target="this" hx-select="unset" hx-swap="outerHTML" hx-sync="this:drop" hx-disabled-elt="find wa-button">
+        <input type="hidden" name="job_url" value="{{ case.job.url }}"><input type="hidden" name="requirement_id" value="{{ requirement.id }}"><input type="hidden" name="revision" value="{{ case.contract_revision }}">
+        <wa-textarea label="Your response or actual exercise result" name="text" required maxlength="20000" value="{{ saved.get('text','') }}" help-text="Use facts you can support. Exercise results must come from completed work."></wa-textarea>
+        <wa-textarea label="Permitted proof links (one per line)" name="proof_links" value="{{ saved.get('proof_links',[])|join('\n') }}"></wa-textarea>
+        <wa-button type="submit" variant="brand">Save application response</wa-button>
+      </form>
+      </wa-details>{% endif %}
+    </wa-details>
+    {% endfor %}
+  {% else %}<p>The preparation workflow still needs to extract the posting’s application requirements.</p>{% endif %}
+  <h3 class="section-divider">Forwardable brief</h3>
+  <p>A concise role-specific export of permitted proof and your contribution, with an introduction you can edit.</p>
+  {% if case.brief.missing_materials %}<wa-callout variant="neutral"><p>This brief has gaps you can fill:</p><ul>{% for missing in case.brief.missing_materials %}<li>{{ missing }}</li>{% endfor %}</ul><a href="/ui/evidence">Open your evidence</a></wa-callout>{% endif %}
+  <wa-details summary="Preview the recipient-facing brief"><div class="message-body">{{ case.brief.markdown }}</div></wa-details>
+  <p><a href="/api/opportunities/brief.md?{{ urlencode({'job_url':case.job.url}) }}" hx-boost="false">Download a brief from approved evidence</a></p>
+  {% if not read_only %}<wa-details summary="Edit the introduction and save a brief">
+    <form id="forwardable-brief-{{ case.job.url|dom_id }}" class="opportunity-form" method="post" action="/ui/actions/opportunities/brief" hx-post="/ui/actions/opportunities/brief" hx-target="this" hx-select="unset" hx-swap="outerHTML" hx-sync="this:drop" hx-disabled-elt="find wa-button">
+      <input type="hidden" name="job_url" value="{{ case.job.url }}"><wa-textarea label="Introduction" name="introduction" maxlength="4000" value="{{ case.brief.introduction }}" help-text="Edit the introduction for the person you intend to contact."></wa-textarea>
+      <wa-button type="submit" variant="brand">Save and export brief</wa-button>
+    </form>
+  </wa-details>{% endif %}
+  <h3 class="section-divider">What reached the employer</h3>
+  {% for package in case.sent_packages %}<wa-details summary="{{ package.get('channel','Application')|label }} · {{ package.sent_at }}"><p>{{ package.record_scope }}</p>{{ record(package) }}</wa-details>{% else %}<p>No confirmed application package recorded.</p>{% endfor %}
+  {% for message in case.outreach %}<wa-details summary="{{ message.payload.get('subject') or 'Contact message' }} · {{ message.state|label }}"><p>To {{ message.payload.get('to') }}</p><div class="message-body">{{ message.payload.get('body') }}</div>{% if message.payload.get('proofs') %}{{ record(message.payload.proofs) }}{% endif %}</wa-details>{% endfor %}
+  <wa-details summary="Employer responses and relationship outcomes">{{ record(case.employer_responses) }}{{ record(case.relationship_events) }}</wa-details>
+  <p><a href="/ui/career?{{ urlencode({'job_url':case.job.url}) }}">Interview practice and reports for this role</a></p>
+{% else %}
+  {% for item in value.get('actions',[]) %}{{ next_action(item, not read_only) }}{% else %}{{ empty('Nothing needs your response right now.', 'Employer replies, introductions, application contributions and ready practice questions appear here with the material you need.') }}{% endfor %}
+{% endif %}

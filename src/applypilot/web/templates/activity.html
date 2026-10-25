@@ -1,0 +1,17 @@
+{% from 'macros.html' import status_variant %}
+{% from 'macros.html' import empty, action %}
+{% set items = value.get('items',value.get('tasks',[])) %}
+<div data-activity-feed>
+<template data-activity-context>{{ {'filters':q,'at':value.get('at'),'limit':value.get('limit',100),'warnings':value.get('warnings',[])}|tojson }}</template>
+<div class="activity-tools"><p class="muted">{{ items|length }} recent records</p><div class="activity-actions"><wa-button type="button" data-copy-activity {% if not items %}disabled{% endif %} variant="neutral" appearance="outlined" size="s">Copy activity</wa-button><wa-button type="button" data-export-activity {% if not items %}disabled{% endif %} variant="neutral" appearance="outlined" size="s">Export JSON</wa-button></div></div>
+<div class="activity-feed">{% for item in items %}
+{% set state = item.get('state') or item.get('status') or item.get('outcome') or item.get('event') or 'recorded' %}
+{% set identity = item.get('kind','record') ~ ':' ~ item.get('id','') %}
+<article id="{{ identity|dom_id }}" class="activity-row" data-activity-id="{{ identity }}"><template data-activity-record>{{ item|tojson }}</template><span class="activity-dot {{ 'failed' if item.get('severity') in ['error','critical'] else '' }}"></span><div><div class="activity-title"><strong>{{ item.get('title') or item.get('operation') or item.get('event','Workspace activity')|label }}</strong><time data-time datetime="{{ item.get('created_at') or item.get('at','') }}">{{ item.get('created_at') or item.get('at','') }}</time></div><small>{{ item.get('source_label') or item.get('source','Workspace')|label }}{% if item.get('company') %} · {{ item.company }}{% endif %}</small><p class="row-description activity-summary {% if item.get('severity') in ['error','critical'] %}error{% endif %}">{{ item.get('reason') or item.get('message') or item.get('summary') or '' }}</p>
+{% if item.get('next_action') %}<p class="next-action">{{ item.next_action }}</p>{% endif %}
+{% if item.get('job_url') %}<a href="/ui/detail/job?{{ urlencode({'url':item.job_url}) }}" hx-get="/ui/detail/job?{{ urlencode({'url':item.job_url}) }}" hx-target="#detail-content" hx-select="unset" hx-swap="innerHTML">Application details</a>{% endif %}
+{% if item.get('kind') == 'setup' and item.get('id') %}<a href="/ui/detail/task/{{ item.id }}" hx-get="/ui/detail/task/{{ item.id }}" hx-target="#detail-content" hx-select="unset" hx-swap="innerHTML">View task details</a>{% endif %}
+<div class="activity-actions">{% if item.get('action_href') %}<wa-button href="{{ item.action_href }}" variant="neutral" appearance="outlined" size="s">{{ item.get('action_label','Review settings') }}</wa-button>{% endif %}<wa-button type="button" data-open-activity variant="neutral" appearance="outlined" size="s">{{ 'View error' if item.get('severity') in ['error','critical'] else 'View details' }}</wa-button><wa-button type="button" data-copy-record variant="neutral" appearance="outlined" size="s">Copy record</wa-button></div>
+</div><wa-badge variant="{{ status_variant(state) }}">{{ item.get('status_label') or state|label }}</wa-badge>{% if item.get('kind') == 'setup' and state in ['queued','running'] and not read_only %}{{ action('setup/task/cancel','Cancel',{'id':item.id},view) }}{% endif %}</article>
+{% else %}{{ empty('No activity matches these filters.','Choose all severities or clear the search to see more history.') }}{% endfor %}</div>
+</div>
